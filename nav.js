@@ -1,0 +1,34 @@
+const NAV = [
+  {
+    id: 'control',
+    icon: '📊',
+    label: 'Control Page',
+    desc: 'Sales, purchasing, expenses & cash overview',
+  },
+  {
+    id: 'expenses',
+    icon: '💸',
+    label: 'Expenses',
+    desc: 'Track expense categories and monthly spending',
+  },
+  {
+    id: 'projects',
+    icon: '🏗️',
+    label: 'Projects',
+    desc: 'Monitor project cost, billing, and progress',
+  },
+  {
+    id: 'hr',
+    icon: '👥',
+    label: 'HR',
+    desc: 'Employees, attendance, payroll, and HR statistics',
+  },
+  {
+    id: 'cash',
+    icon: '💰',
+    label: 'Cash',
+    desc: 'Treasury, bank, cash flow, and collections',
+  },
+];
+
+export default NAV;
