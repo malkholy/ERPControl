@@ -18,6 +18,19 @@ export default defineConfig({
             proxyReq.setHeader('Content-Type', 'application/json')
           })
         }
+      },
+      '/api-express': {
+        target: 'https://quick.glcpaints.com:7790',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api-express/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('SP_Name', 'APIExprssControlOperation')
+            proxyReq.setHeader('Accept', 'application/json')
+            proxyReq.setHeader('Content-Type', 'application/json')
+          })
+        }
       }
     }
   }

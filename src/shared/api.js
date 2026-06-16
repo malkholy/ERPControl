@@ -14,13 +14,19 @@ const BASE_BODY = {
   IP: '192.168.1.3'
 };
 
-export async function apiCall(operation, lineData = null, extraParams = {}) {
-  const res = await fetch(API_URL, {
+export async function apiCall(operation, lineData = null, extraParams = {}, isExpress = false) {
+  const url = isExpress
+    ? (IS_DEV ? '/api-express/General/GeneralAPI/' : 'https://quick.glcpaints.com:7790/General/GeneralAPI/')
+    : (IS_DEV ? '/api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/');
+  
+  const spName = isExpress ? 'APIExprssControlOperation' : 'APIERPControlOperation';
+
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'SP_Name': 'APIERPControlOperation'
+      'SP_Name': spName
     },
     body: JSON.stringify({
       ...BASE_BODY,

@@ -128,6 +128,7 @@ export default function ControlPage({ user }) {
   const [quarters, setQuarters] = useState([Math.ceil((now.getMonth() + 1) / 3)]);
   const [year, setYear] = useState(now.getFullYear());
   const [data, setData] = useState(null);
+  const [expressData, setExpressData] = useState(null);
   const [expenses, setExpenses] = useState([]);
   const [cash, setCash] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -135,7 +136,7 @@ export default function ControlPage({ user }) {
   const [view, setView] = useState('main');
 
   async function load() {
-    setLoading(true); setError(''); setExpenses([]); setCash([]);
+    setLoading(true); setError(''); setExpenses([]); setCash([]); setExpressData(null);
     try {
       const lineData = buildLineData(period, months, quarters, year);
       const op = 'Get Control Data By Period';
@@ -143,6 +144,13 @@ export default function ControlPage({ user }) {
       setData(d.List0?.[0] || null);
       setExpenses(d.List1 || []);
       setCash(d.List2 || []);
+      
+      try {
+        const dExp = await apiCall(op, lineData, {}, true);
+        setExpressData(dExp.List0?.[0] || null);
+      } catch (eExp) {
+        console.error('Express loading failed:', eExp);
+      }
     } catch (e) { setError(e.message); }
     setLoading(false);
   }
@@ -152,6 +160,8 @@ export default function ControlPage({ user }) {
   const periodLabel = getPeriodLabel(period, months, quarters, year);
   const collRatio = calcRatio(data?.TotalCollection, data?.TotalSalesAmount);
   const payRatio = calcRatio(data?.TotalPaid, data?.TotalPurchasingAmount);
+  const expressCardRatio = calcRatio(expressData?.TotalActiveCards, expressData?.TotalChargingCards);
+  const expressPointRatio = calcRatio(expressData?.TotalActivePoints, expressData?.TotalChargingPoints);
   const lineData = buildLineData(period, months, quarters, year);
 
   if (view === 'cash') return (
@@ -237,7 +247,7 @@ export default function ControlPage({ user }) {
       </div>
 
       {/* Panels */}
-      <div className="section-grid" style={{gridTemplateColumns:"1fr 1fr 1fr 1fr"}}>
+      <div className="section-grid" style={{gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))"}}>
         <div className="panel">
           <div className="panel-head">
             <span className="panel-title" style={{ cursor: 'pointer', color: 'var(--orange)' }} onClick={() => setView('sales')}>Sales ›</span>
@@ -360,6 +370,24 @@ export default function ControlPage({ user }) {
                 </>;
               })()
             }
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="panel-head">
+            <span className="panel-title" style={{color:'var(--orange)'}}>Express</span>
+            <span className={`badge ${Number(expressCardRatio) >= 80 ? 'badge-green' : 'badge-amber'}`}>
+              {expressCardRatio ? `${expressCardRatio}% Active` : '—'}
+            </span>
+          </div>
+          <div className="panel-body">
+            {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
+              <div className="kpi-row"><span className="kpi-row-label">Charging Cards</span><span className="kpi-row-val">{fmt(expressData?.TotalChargingCards)}</span></div>
+              <div className="kpi-row"><span className="kpi-row-label">Charging Points</span><span className="kpi-row-val">{fmt(expressData?.TotalChargingPoints)}</span></div>
+              <div className="kpi-row"><span className="kpi-row-label">Active Cards</span><span className="kpi-row-val">{fmt(expressData?.TotalActiveCards)}</span></div>
+              <div className="kpi-row"><span className="kpi-row-label">Active Points</span><span className="kpi-row-val">{fmt(expressData?.TotalActivePoints)}</span></div>
+              <div className="kpi-row"><span className="kpi-row-label">Points Act. Ratio</span><span className={`kpi-row-val ${Number(expressPointRatio) >= 80 ? 'kpi-up' : 'kpi-dn'}`}>{expressPointRatio ? expressPointRatio + '%' : '—'}</span></div>
+            </>}
           </div>
         </div>
 
