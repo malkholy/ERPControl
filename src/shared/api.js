@@ -16,7 +16,7 @@ const BASE_BODY = {
 
 export async function apiCall(operation, lineData = null, extraParams = {}, isExpress = false) {
   const url = isExpress
-    ? (IS_DEV ? '/api-express/General/GeneralAPI/' : 'https://quick.glcpaints.com:7790/General/GeneralAPI/')
+    ? (IS_DEV ? '/express-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7790/General/GeneralAPI/')
     : (IS_DEV ? '/api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/');
   
   const spName = isExpress ? 'APIExprssControlOperation' : 'APIERPControlOperation';
