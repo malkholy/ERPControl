@@ -29,6 +29,12 @@ const NAV = [
     label: 'Cash',
     desc: 'Treasury, bank, cash flow, and collections',
   },
+  {
+    id: 'rawpacking',
+    icon: '📦',
+    label: 'Raw & Packing',
+    desc: 'Raw materials and packaging inventory balances',
+  },
 ];
 
 export default NAV;

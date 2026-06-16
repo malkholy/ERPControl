@@ -16,12 +16,13 @@ const QUARTERS = [
 const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i);
 
 function fmt(val) {
-  if (val == null || val === "") return "—";
+  if (val == null || val === '') return '—';
   const n = Number(val);
   const abs = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
-  if (abs >= 1000000) return sign + (abs / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
-  if (abs >= 1000)    return sign + (abs / 1000).toFixed(1).replace(/\.0$/, "") + "K";
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) return sign + (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (abs >= 1_000_000) return sign + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (abs >= 1_000) return sign + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   return n.toFixed(2);
 }
 
@@ -109,7 +110,7 @@ function GroupPanel({ title, icon, summary, details }) {
     <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
       <div style={{padding:"13px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <span style={{fontSize:14,fontWeight:700}}>{icon} {title}</span>
-        <span style={{fontSize:13,fontWeight:700,color:"var(--orange)"}}>{fmt(groupTotal)}</span>
+        <span style={{fontSize:13,fontWeight:700,color:"var(--orange)"}}>{fmt(Math.abs(groupTotal))}</span>
       </div>
       {summary.map((s, i) => {
         const currDetails = details.filter(d => d.LineCurrency === s.LineCurrency);
@@ -123,7 +124,7 @@ function GroupPanel({ title, icon, summary, details }) {
               <div style={{flex:1,height:5,background:"var(--border)",borderRadius:999,overflow:"hidden"}}>
                 <div style={{width:(Math.abs(Number(s.Balance||0))/maxBalance*100)+"%",height:"100%",background:"var(--orange)",borderRadius:999}}></div>
               </div>
-              <span style={{fontSize:13,fontWeight:700,minWidth:60,textAlign:"right"}}>{fmt(s.Balance)}</span>
+              <span style={{fontSize:13,fontWeight:700,minWidth:60,textAlign:"right"}}>{fmt(Math.abs(Number(s.Balance||0)))}</span>
             </div>
             {isOpen && (
               <div style={{background:"var(--soft)"}}>
@@ -132,17 +133,24 @@ function GroupPanel({ title, icon, summary, details }) {
                     <span key={i} style={{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",textAlign:i>0?"right":"left"}}>{h}</span>
                   ))}
                 </div>
-                {currDetails.map((d, j) => (
-                  <div key={j} style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 80px 80px 70px",gap:6,padding:"9px 18px 9px 42px",borderBottom:j<currDetails.length-1?"1px solid var(--border)":"none",alignItems:"center"}}>
-                    <span style={{fontSize:12,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.AccountDescription}</span>
-                    <span style={{fontSize:12,textAlign:"right",color:"var(--muted)"}}>{fmt(d.OpeningBalance)}</span>
-                    <span style={{fontSize:12,textAlign:"right",color:"var(--green)"}}>{fmt(d.TotalDebit)}</span>
-                    <span style={{fontSize:12,textAlign:"right",color:"var(--red)"}}>{fmt(d.TotalCredit)}</span>
-                    <span style={{fontSize:12,textAlign:"right",fontWeight:600,color:Number(d.Movement||0)>=0?"var(--green)":"var(--red)"}}>{fmt(d.Movement)}</span>
-                    <span style={{fontSize:12,textAlign:"right",fontWeight:700}}>{fmt(d.ClosingBalance)}</span>
-                    <span style={{textAlign:"right"}}><StateBadge state={d.CashState} /></span>
-                  </div>
-                ))}
+                {currDetails.map((d, j) => {
+                  const closing = Math.abs(Number(d.ClosingBalance||0));
+                  const opening = Math.abs(Number(d.OpeningBalance||0));
+                  const movement = closing - opening;
+                  return (
+                    <div key={j} style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 80px 80px 70px",gap:6,padding:"9px 18px 9px 42px",borderBottom:j<currDetails.length-1?"1px solid var(--border)":"none",alignItems:"center"}}>
+                      <span style={{fontSize:12,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.AccountDescription}</span>
+                      <span style={{fontSize:12,textAlign:"right",color:"var(--muted)"}}>{fmt(opening)}</span>
+                      <span style={{fontSize:12,textAlign:"right",color:"var(--green)"}}>{fmt(Math.abs(Number(d.TotalDebit||0)))}</span>
+                      <span style={{fontSize:12,textAlign:"right",color:"var(--red)"}}>{fmt(Math.abs(Number(d.TotalCredit||0)))}</span>
+                      <span style={{fontSize:12,textAlign:"right",fontWeight:600,color:movement>=0?"var(--green)":"var(--red)"}}>
+                        {movement >= 0 ? "+" : ""}{fmt(movement)}
+                      </span>
+                      <span style={{fontSize:12,textAlign:"right",fontWeight:700}}>{fmt(closing)}</span>
+                      <span style={{textAlign:"right"}}><StateBadge state={d.CashState} /></span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -152,23 +160,66 @@ function GroupPanel({ title, icon, summary, details }) {
   );
 }
 
+function getBankCurrency(bankCode, bankName, fallbackCurrency) {
+  const code = (bankCode || "").toUpperCase();
+  const name = (bankName || "").toLowerCase();
+  
+  if (code.includes("EG") || name.includes("جنيه") || name.includes("egp")) {
+    return "EGP";
+  }
+  if (code.includes("SD") || name.includes("دولار") || name.includes("usd") || name.includes("dollar")) {
+    return "USD";
+  }
+  if (code.includes("EU") || name.includes("يورو") || name.includes("eur") || name.includes("euro")) {
+    return "EUR";
+  }
+  return fallbackCurrency;
+}
+
 function TopBanksPanel({ topBanks, summary }) {
   const [selectedCurrency, setSelectedCurrency] = useState(null);
-  const currencies = [...new Set(topBanks.map(b => b.LineCurrency))];
+  
+  // Categorize each bank record to its correct account currency
+  const currencies = [...new Set(topBanks.map(b => getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency)))];
   const activeCurr = selectedCurrency || currencies[0];
-  const filteredBanks = topBanks.filter(b => b.LineCurrency === activeCurr);
-  const grandTotal = topBanks.reduce((s,b) => s + Math.abs(Number(b.ClosingBalance||0)), 0);
+  
+  // Calculate the max number of banks in any single currency to set the standard row count
+  const maxRowsCount = Math.max(...currencies.map(curr => 
+    topBanks.filter(b => b.LineCurrency === curr && getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency) === curr).length
+  ), 1);
+
+  // Get actual banks for the active currency, sorted by parent bank name
+  const activeBanks = topBanks
+    .filter(b => b.LineCurrency === activeCurr && getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency) === activeCurr)
+    .sort((a, b) => (a.BankAccountName || "").localeCompare(b.BankAccountName || ""));
+
+  // Pad activeBanks with empty rows up to maxRowsCount
+  const filteredBanks = [...activeBanks];
+  while (filteredBanks.length < maxRowsCount) {
+    filteredBanks.push({
+      Bank: "",
+      BankAccountName: "",
+      LineCurrency: activeCurr,
+      OpeningBalance: null,
+      TotalDebit: null,
+      TotalCredit: null,
+      ClosingBalance: null,
+      CashState: "Neutral",
+      isEmptyPlaceholder: true
+    });
+  }
+
+  const grandTotal = activeBanks.reduce((s,b) => s + Math.abs(Number(b.ClosingBalance||0)), 0);
   return (
     <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
       <div style={{padding:"13px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:14,fontWeight:700}}>Top 10 Bank Balances</span>
+        <span style={{fontSize:14,fontWeight:700}}>Balances by Bank Institution</span>
         <span style={{fontSize:13,fontWeight:700,color:"var(--orange)"}}>{fmt(grandTotal)}</span>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat("+currencies.length+", 1fr)",gap:8,padding:14,borderBottom:"1px solid var(--border)"}}>
         {currencies.map((curr, i) => {
-          const currBanks = topBanks.filter(b => b.LineCurrency === curr);
-          const summaryRow = (summary||[]).find(s => s.LineCurrency === curr && s.AccountGroup === '127');
-          const total = summaryRow ? Math.abs(Number(summaryRow.Balance||0)) : currBanks.reduce((s,b) => s + Math.abs(Number(b.ClosingBalance||0)), 0);
+          const currBanks = topBanks.filter(b => b.LineCurrency === curr && getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency) === curr);
+          const total = currBanks.reduce((s,b) => s + Math.abs(Number(b.ClosingBalance||0)), 0);
           const isActive = activeCurr === curr;
           return (
             <div key={i} onClick={() => setSelectedCurrency(curr)} style={{
@@ -178,7 +229,7 @@ function TopBanksPanel({ topBanks, summary }) {
             }}>
               <div style={{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",letterSpacing:".05em",marginBottom:4}}>{curr}</div>
               <div style={{fontSize:14,fontWeight:700,color:isActive?"var(--orange)":"var(--text)"}}>{fmt(total)}</div>
-              <div style={{fontSize:10,color:"var(--muted)",marginTop:2}}>{currBanks.length} banks</div>
+              <div style={{fontSize:10,color:"var(--muted)",marginTop:2}}>{currBanks.length} institutions</div>
             </div>
           );
         })}
@@ -187,23 +238,38 @@ function TopBanksPanel({ topBanks, summary }) {
         <table style={{width:"100%",borderCollapse:"collapse"}}>
           <thead>
             <tr>
-              {["Bank","Account Name","Opening","Debit","Credit","Closing","State"].map((h,i) => (
+              {["Bank Code","Parent Bank Name","Opening","Debit","Credit","Closing","State"].map((h,i) => (
                 <th key={i} style={{padding:"9px 14px",background:"var(--soft)",color:"var(--muted)",fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:".05em",textAlign:i>1?"right":"left",borderBottom:"1px solid var(--border)",whiteSpace:"nowrap"}}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filteredBanks.map((b, i) => (
-              <tr key={i}>
-                <td style={{padding:"10px 14px",fontSize:12,fontFamily:"var(--mono)",color:"var(--muted)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{b.Bank}</td>
-                <td style={{padding:"10px 14px",fontSize:13,fontWeight:500,borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{b.BankAccountName}</td>
-                <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",color:"var(--muted)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{fmt(Math.abs(Number(b.OpeningBalance||0)))}</td>
-                <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",color:"var(--green)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{fmt(b.TotalDebit)}</td>
-                <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",color:"var(--red)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{fmt(b.TotalCredit)}</td>
-                <td style={{padding:"10px 14px",fontSize:13,textAlign:"right",fontWeight:700,borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{fmt(Math.abs(Number(b.ClosingBalance||0)))}</td>
-                <td style={{padding:"10px 14px",textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}><StateBadge state={b.CashState} /></td>
-              </tr>
-            ))}
+            {filteredBanks.map((b, i) => {
+              if (b.isEmptyPlaceholder) {
+                return (
+                  <tr key={i}>
+                    <td style={{padding:"10px 14px",fontSize:12,borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
+                    <td style={{padding:"10px 14px",fontSize:13,borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
+                    <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
+                    <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
+                    <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
+                    <td style={{padding:"10px 14px",fontSize:13,textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
+                    <td style={{padding:"10px 14px",textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
+                  </tr>
+                );
+              }
+              return (
+                <tr key={i}>
+                  <td style={{padding:"10px 14px",fontSize:12,fontFamily:"var(--mono)",color:"var(--muted)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{b.Bank}</td>
+                  <td style={{padding:"10px 14px",fontSize:13,fontWeight:500,borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{b.BankAccountName}</td>
+                  <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",color:"var(--muted)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{fmt(Math.abs(Number(b.OpeningBalance||0)))}</td>
+                  <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",color:"var(--green)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{fmt(b.TotalDebit)}</td>
+                  <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",color:"var(--red)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{fmt(b.TotalCredit)}</td>
+                  <td style={{padding:"10px 14px",fontSize:13,textAlign:"right",fontWeight:700,borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{fmt(Math.abs(Number(b.ClosingBalance||0)))}</td>
+                  <td style={{padding:"10px 14px",textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}><StateBadge state={b.CashState} /></td>
+                </tr>
+              );
+            })}
               <tr style={{background:"var(--soft)"}}>
                 <td style={{padding:"10px 14px",fontSize:12,fontWeight:700,borderTop:"1px solid var(--border2)"}} colSpan={2}>Total</td>
                 <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",fontWeight:700,color:"var(--muted)",borderTop:"1px solid var(--border2)"}}>
@@ -347,7 +413,7 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
           </div>
           {topBanks.length > 0 && (
             <>
-              <div className="section-label" style={{marginBottom:10}}>Top 10 Bank Balances</div>
+              <div className="section-label" style={{marginBottom:10}}>Balances by Bank Institution</div>
               <TopBanksPanel topBanks={topBanks} summary={summary} />
             </>
           )}

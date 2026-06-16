@@ -6,6 +6,7 @@ import Expenses from './pages/Expenses.jsx';
 import Projects from './pages/Projects.jsx';
 import HR from './pages/HR.jsx';
 import Cash from './pages/Cash.jsx';
+import RawPacking from './pages/RawPacking.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -141,6 +142,7 @@ const PAGE_COMPONENTS = {
   projects: Projects,
   hr: HR,
   cash: Cash,
+  rawpacking: RawPacking,
 };
 
 // ─── App ─────────────────────────────────────────────────────────────────────
@@ -168,10 +170,11 @@ export default function App() {
     if (!un || !pw) { setLoginErr('Enter username and password'); return; }
     setLoginLoading(true); setLoginErr('');
     try {
-      
+
       const d = await apiCall('Login', { Username: un, Password: pw });
       if (d.State === 0 && d.List0?.length) {
         const u = d.List0[0];
+        sessionStorage.setItem('FullName', u.Username || un);
         setUser({ Username: u.Username || un, Name: u.Name || un });
         openPage('control');
       } else {
@@ -184,6 +187,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    sessionStorage.removeItem('FullName');
     setUser(null); setOpenTabs([]); setActiveTab(null);
   };
 

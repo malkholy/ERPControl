@@ -20,10 +20,13 @@ const QUARTERS = [
 const YEARS = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - i);
 
 function fmt(val) {
-  if (val == null) return '—';
+  if (val == null || val === '') return '—';
   const n = Number(val);
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) return sign + (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (abs >= 1_000_000) return sign + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (abs >= 1_000) return sign + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
   return n.toFixed(2);
 }
 
@@ -320,37 +323,38 @@ export default function ControlPage({ user }) {
               (() => {
                 const treasury = cash.find(c => c.AccountGroup === '126');
                 const bank     = cash.find(c => c.AccountGroup === '127');
+                const totalCurrent = Number(treasury?.CurrentBalance || 0) + Number(bank?.CurrentBalance || 0);
+                const totalDiff = Number(treasury?.Difference || 0) + Number(bank?.Difference || 0);
                 return <>
-                  {/* Treasury */}
-                  <div className="kpi-row"><span className="kpi-row-label" style={{fontWeight:700}}>Treasury</span><span className="kpi-row-val"></span></div>
-                  <div className="kpi-row" style={{paddingLeft:12}}>
-                    <span className="kpi-row-label">Opening</span>
-                    <span className="kpi-row-val">{fmt(treasury?.OpeningBalance)}</span>
-                  </div>
-                  <div className="kpi-row" style={{paddingLeft:12}}>
-                    <span className="kpi-row-label">Current</span>
-                    <span className="kpi-row-val">{fmt(treasury?.CurrentBalance)}</span>
-                  </div>
-                  <div className="kpi-row" style={{paddingLeft:12}}>
-                    <span className="kpi-row-label">Cash State</span>
-                    <span className="kpi-row-val" style={{color: Number(treasury?.Difference||0)>=0?'var(--green)':'var(--red)', fontWeight:600}}>
-                      {Number(treasury?.Difference||0)>=0 ? '▲ Inflow' : '▼ Outflow'}
+                  <div className="kpi-row">
+                    <span className="kpi-row-label">Treasury Balance</span>
+                    <span className="kpi-row-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {fmt(treasury?.CurrentBalance)}
+                      <span style={{ fontSize: 11, color: Number(treasury?.Difference || 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                        {Number(treasury?.Difference || 0) >= 0 ? '▲' : '▼'}
+                      </span>
                     </span>
                   </div>
-                  {/* Bank */}
-                  <div className="kpi-row"><span className="kpi-row-label" style={{fontWeight:700}}>Bank</span><span className="kpi-row-val"></span></div>
-                  <div className="kpi-row" style={{paddingLeft:12}}>
-                    <span className="kpi-row-label">Opening</span>
-                    <span className="kpi-row-val">{fmt(bank?.OpeningBalance)}</span>
+                  <div className="kpi-row">
+                    <span className="kpi-row-label">Bank Balance</span>
+                    <span className="kpi-row-val" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {fmt(bank?.CurrentBalance)}
+                      <span style={{ fontSize: 11, color: Number(bank?.Difference || 0) >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                        {Number(bank?.Difference || 0) >= 0 ? '▲' : '▼'}
+                      </span>
+                    </span>
                   </div>
-                  <div className="kpi-row" style={{paddingLeft:12}}>
-                    <span className="kpi-row-label">Current</span>
-                    <span className="kpi-row-val">{fmt(bank?.CurrentBalance)}</span>
+                  <div className="kpi-row">
+                    <span className="kpi-row-label" style={{ fontWeight: 700 }}>Total Cash</span>
+                    <span className="kpi-row-val" style={{ fontWeight: 700 }}>{fmt(totalCurrent)}</span>
                   </div>
-                  <div className="kpi-row" style={{paddingLeft:12}}>
-                    <span className="kpi-row-label">Cash State</span>
-                    <span className="kpi-row-val" style={{color: Number(bank?.Difference||0)>=0?'var(--green)':'var(--red)', fontWeight:600}}>
-                      {Number(bank?.Difference||0)>=0 ? '▲ Inflow' : '▼ Outflow'}
+                  <div className="kpi-row">
+                    <span className="kpi-row-label" style={{ fontWeight: 700 }}>Net Movement</span>
+                    <span className="kpi-row-val" style={{
+                      fontWeight: 700,
+                      color: totalDiff >= 0 ? 'var(--green)' : 'var(--red)'
+                    }}>
+                      {totalDiff >= 0 ? '▲ +' : '▼ '}{fmt(totalDiff)}
                     </span>
                   </div>
                 </>;
