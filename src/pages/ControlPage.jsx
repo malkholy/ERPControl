@@ -161,7 +161,12 @@ export default function ControlPage({ user }) {
   const collRatio = calcRatio(data?.TotalCollection, data?.TotalSalesAmount);
   const payRatio = calcRatio(data?.TotalPaid, data?.TotalPurchasingAmount);
   const expressCardRatio = calcRatio(expressData?.TotalActiveCards, expressData?.TotalChargingCards);
-  const expressPointRatio = calcRatio(expressData?.TotalActivePoints, expressData?.TotalChargingPoints);
+  const chargingAvg = expressData?.TotalChargingCards && expressData?.TotalChargingPoints
+    ? (Number(expressData.TotalChargingPoints) / Number(expressData.TotalChargingCards)).toFixed(1)
+    : null;
+  const activationAvg = expressData?.TotalActiveCards && expressData?.TotalActivePoints
+    ? (Number(expressData.TotalActivePoints) / Number(expressData.TotalActiveCards)).toFixed(1)
+    : null;
   const lineData = buildLineData(period, months, quarters, year);
 
   if (view === 'cash') return (
@@ -383,10 +388,9 @@ export default function ControlPage({ user }) {
           <div className="panel-body">
             {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
               <div className="kpi-row"><span className="kpi-row-label">Charging Cards</span><span className="kpi-row-val">{fmt(expressData?.TotalChargingCards)}</span></div>
-              <div className="kpi-row"><span className="kpi-row-label">Charging Points</span><span className="kpi-row-val">{fmt(expressData?.TotalChargingPoints)}</span></div>
               <div className="kpi-row"><span className="kpi-row-label">Active Cards</span><span className="kpi-row-val">{fmt(expressData?.TotalActiveCards)}</span></div>
-              <div className="kpi-row"><span className="kpi-row-label">Active Points</span><span className="kpi-row-val">{fmt(expressData?.TotalActivePoints)}</span></div>
-              <div className="kpi-row"><span className="kpi-row-label">Points Act. Ratio</span><span className={`kpi-row-val ${Number(expressPointRatio) >= 80 ? 'kpi-up' : 'kpi-dn'}`}>{expressPointRatio ? expressPointRatio + '%' : '—'}</span></div>
+              <div className="kpi-row"><span className="kpi-row-label">Charging Avg</span><span className="kpi-row-val">{chargingAvg ? `${chargingAvg} pts` : '—'}</span></div>
+              <div className="kpi-row"><span className="kpi-row-label">Activation Avg</span><span className="kpi-row-val">{activationAvg ? `${activationAvg} pts` : '—'}</span></div>
             </>}
           </div>
         </div>
