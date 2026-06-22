@@ -505,7 +505,7 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
           zIndex: 1000, display: 'flex', justifyContent: 'flex-end',
         }} onClick={() => setDrawerOpen(false)}>
           <div style={{
-            width: 'min(95vw, 1000px)', background: 'var(--surface)', borderLeft: '1px solid var(--border)',
+            width: 'min(95vw, 1200px)', background: 'var(--surface)', borderLeft: '1px solid var(--border)',
             height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-lg)',
             padding: '24px', overflowY: 'auto',
           }} onClick={e => e.stopPropagation()}>
