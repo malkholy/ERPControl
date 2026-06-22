@@ -871,6 +871,74 @@ begin
 end
 
 
+if @Operation = 'Get Customer Type Detail Breakdown'
+begin
+    if lower(@User) = 'a.mostafa'
+    begin
+        set @State = 1
+        set @Message = 'Access Denied: You do not have permission to view Sales data.'
+        return
+    end
+
+    declare @Period4 nvarchar(20), @Months4 nvarchar(100), @QuarterNo4 int, @CustomerType4 nvarchar(50)
+
+    select 
+        @Period4   = Period,
+        @Months4   = Months,
+        @QuarterNo4 = Quarter,
+        @Year      = Year,
+        @CustomerType4 = CustomerType
+    from openjson(@LineData) with (
+        Period   nvarchar(20)  '$.Period',
+        Months   nvarchar(100) '$.Months',
+        Quarter  int           '$.Quarter',
+        Year     int           '$.Year',
+        CustomerType nvarchar(50) '$.CustomerType'
+    )
+
+    if @Period4 = 'quarterly'
+        set @Months4 = case @QuarterNo4
+            when 1 then '1,2,3'
+            when 2 then '4,5,6'
+            when 3 then '7,8,9'
+            when 4 then '10,11,12'
+        end
+
+    declare @MonthFilter4 nvarchar(200)
+    if @Period4 = 'yearly'
+        set @MonthFilter4 = '1=1'
+    else
+        set @MonthFilter4 = 'month(a.InvoiceDate) IN (' + @Months4 + ')'
+
+    -- Filter expression based on the selected type
+    declare @Filter4 nvarchar(max)
+    set @Filter4 = case @CustomerType4
+        when 'White Customers' then 'b.SalesPersonNumber like ''1%'' and b.CustomerNumber not like ''6%'''
+        when 'Color Centers' then 'b.SalesPersonNumber like ''2%'' and b.CustomerNumber not like ''6%'''
+        when 'Projects' then 'b.SalesPersonNumber like ''3%'' and b.CustomerNumber not like ''6%'''
+        when 'Export' then 'b.CustomerNumber like ''6%'''
+        else 'b.SalesPersonNumber not like ''1%'' and b.SalesPersonNumber not like ''2%'' and b.SalesPersonNumber not like ''3%'' and b.CustomerNumber not like ''6%'''
+    end
+
+    -- Run query to get the grouped table
+    declare @SQL4 nvarchar(max)
+    set @SQL4 = N'
+        select top(25) 
+            b.CustomerNumber, 
+            isnull(max(b.CustomerExtraName), ''Unknown Customer'') as CustomerName,
+            Sum(a.LineTaxtableAmount * b.ExchangeRate) as TotalAmount,
+            Sum(isnull(a.LineWeight, 0)) as TotalWeight
+        from acr.CustomerInvoiceLine a
+        inner join acr.CustomerInvoiceHeader b on a.IntID = b.InternalID
+        where year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' and ' + @MonthFilter4 + '
+          and ' + @Filter4 + '
+        group by b.CustomerNumber
+        order by TotalAmount desc'
+
+    exec sp_executesql @SQL4
+end
+
+
 if @Operation = 'Get Purchasing Details By Period'
 begin
     if lower(@User) = 'w.sabri'

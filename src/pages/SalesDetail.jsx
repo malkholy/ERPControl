@@ -154,6 +154,13 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Drawer states
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerType, setDrawerType] = useState(null);
+  const [drawerData, setDrawerData] = useState([]);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerError, setDrawerError] = useState('');
+
   const periodLabel = getPeriodLabel(period, months, quarters, year);
   const lineData = buildLineData(period, months, quarters, year);
 
@@ -164,6 +171,24 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
       setData(d.List0?.[0] || null);
     } catch(e) { setError(e.message); }
     setLoading(false);
+  }
+
+  async function openBreakdown(type) {
+    setDrawerType(type);
+    setDrawerOpen(true);
+    setDrawerLoading(true);
+    setDrawerError('');
+    setDrawerData([]);
+    try {
+      const res = await apiCall('Get Customer Type Detail Breakdown', {
+        ...lineData,
+        CustomerType: type
+      });
+      setDrawerData(res.List0 || []);
+    } catch (e) {
+      setDrawerError(e.message);
+    }
+    setDrawerLoading(false);
   }
 
   useEffect(() => { load(); }, [period, months, quarters, year]);
@@ -311,6 +336,18 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
         ))}
       </div>
 
+      <style>{`
+        .customer-type-link {
+          color: inherit;
+          cursor: pointer;
+          transition: color 0.15s ease;
+        }
+        .customer-type-link:hover {
+          color: var(--orange);
+          text-decoration: underline;
+        }
+      `}</style>
+
       {/* 3 panels */}
       <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, marginBottom:32}}>
         <div style={card}>
@@ -320,7 +357,7 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
           </div>
           {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
             <BRow icon="🏠" label="Local"  amount={fmt(localSales)}  pctVal={pct(localSales,totalSales)}  color="var(--orange)" />
-            <BRow icon="🌍" label="Export" amount={fmt(exportSales)} pctVal={pct(exportSales,totalSales)} color="var(--blue)" />
+            <BRow icon="🌍" label={<span onClick={() => openBreakdown('Export')} className="customer-type-link">Export</span>} amount={fmt(exportSales)} pctVal={pct(exportSales,totalSales)} color="var(--blue)" />
             <BRow label="Total" amount={fmt(totalSales)} pctVal="100%" bold color="var(--text)" />
           </>}
         </div>
@@ -331,10 +368,10 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
             <span style={{fontSize:12, color:'var(--muted)'}}>Local Sales</span>
           </div>
           {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
-            <BRow icon="👥" label="White Customers" amount={fmt(data?.WhiteSales)}       pctVal={pct(data?.WhiteSales,localSales)}       color="var(--green)" />
-            <BRow icon="🎨" label="Color Centers"   amount={fmt(data?.ColorCenterSales)} pctVal={pct(data?.ColorCenterSales,localSales)} color="var(--amber)" />
-            <BRow icon="🏗️" label="Projects"        amount={fmt(data?.ProjectSales)}     pctVal={pct(data?.ProjectSales,localSales)}     color="#7c3aed" />
-            <BRow icon="📦" label="Other"           amount={fmt(otherSales)}             pctVal={pct(otherSales,localSales)}             color="var(--muted)" />
+            <BRow icon="👥" label={<span onClick={() => openBreakdown('White Customers')} className="customer-type-link">White Customers</span>} amount={fmt(data?.WhiteSales)}       pctVal={pct(data?.WhiteSales,localSales)}       color="var(--green)" />
+            <BRow icon="🎨" label={<span onClick={() => openBreakdown('Color Centers')} className="customer-type-link">Color Centers</span>}   amount={fmt(data?.ColorCenterSales)} pctVal={pct(data?.ColorCenterSales,localSales)} color="var(--amber)" />
+            <BRow icon="🏗️" label={<span onClick={() => openBreakdown('Projects')} className="customer-type-link">Projects</span>}        amount={fmt(data?.ProjectSales)}     pctVal={pct(data?.ProjectSales,localSales)}     color="#7c3aed" />
+            <BRow icon="📦" label={<span onClick={() => openBreakdown('Other')} className="customer-type-link">Other</span>}           amount={fmt(otherSales)}             pctVal={pct(otherSales,localSales)}             color="var(--muted)" />
             <BRow label="Total Local" amount={fmt(localSales)} pctVal="100%" bold color="var(--text)" />
           </>}
         </div>
@@ -418,7 +455,13 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
             </div>
             {comparisonRows.map((r,i) => (
               <div key={i} style={{display:'grid', gridTemplateColumns:'1fr 90px 90px 72px', gap:6, padding:'10px 0', borderBottom:i<5?'1px solid var(--border)':'none', alignItems:'center'}}>
-                <span style={{fontSize:13, fontWeight:r.bold?700:500}}>{r.icon} {r.label}</span>
+                <span style={{fontSize:13, fontWeight:r.bold?700:500}}>
+                  {r.icon} {r.bold ? (
+                    r.label
+                  ) : (
+                    <span onClick={() => openBreakdown(r.label)} className="customer-type-link">{r.label}</span>
+                  )}
+                </span>
                 <span style={{fontSize:13, textAlign:'right', color:'var(--muted)', fontWeight:r.bold?700:400}}>{fmtWeight(r.p)}</span>
                 <span style={{fontSize:13, textAlign:'right', fontWeight:700}}>{fmtWeight(r.c)}</span>
                 <span style={{textAlign:'right'}}><GrowthBadge prev={r.p} curr={r.c} /></span>
@@ -453,6 +496,74 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
           </>}
         </div>
       </div>
+
+      {/* Detail Drawer Overlay */}
+      {drawerOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(4px)',
+          zIndex: 1000, display: 'flex', justifyContent: 'flex-end',
+        }} onClick={() => setDrawerOpen(false)}>
+          <div style={{
+            width: '540px', background: 'var(--surface)', borderLeft: '1px solid var(--border)',
+            height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-lg)',
+            padding: '24px', overflowY: 'auto',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20}}>
+              <div>
+                <div style={{fontSize:11, color:'var(--muted)', textTransform:'uppercase', fontWeight:700, letterSpacing:'.08em'}}>Customer Breakdown</div>
+                <div style={{fontSize:20, fontWeight:800, color:'var(--orange)'}}>{drawerType}</div>
+              </div>
+              <button onClick={() => setDrawerOpen(false)} style={{
+                background:'none', border:'none', color:'var(--muted)', fontSize:24, cursor:'pointer', padding:5
+              }}>×</button>
+            </div>
+            
+            <div style={{height:'0.5px', background:'var(--border)', marginBottom:16}}></div>
+
+            {drawerLoading ? (
+              <div style={{flex:1, display:'flex', justifyContent:'center', alignItems:'center', minHeight: 200}}>
+                <div className="spinner"></div>
+              </div>
+            ) : drawerError ? (
+              <div style={{color:'var(--red)', padding:16, textAlign:'center'}}>⚠ {drawerError}</div>
+            ) : drawerData.length === 0 ? (
+              <div style={{color:'var(--muted)', padding:32, textAlign:'center'}}>No customers found for this period.</div>
+            ) : (
+              <div style={{flex:1, overflowY:'auto'}}>
+                <table style={{width:'100%', borderCollapse:'collapse'}}>
+                  <thead>
+                    <tr>
+                      <th style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'}}>Customer</th>
+                      <th style={{padding:'8px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'}}>Amount</th>
+                      <th style={{padding:'8px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'}}>Weight</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drawerData.map((cust, i) => (
+                      <tr key={cust.CustomerNumber} style={{
+                        borderBottom:'1px solid var(--border2)',
+                        background: i % 2 === 0 ? 'var(--soft)' : 'transparent'
+                      }}>
+                        <td style={{padding:'12px', fontSize:13}}>
+                          <div style={{fontWeight:600}}>{cust.CustomerName}</div>
+                          <div style={{fontSize:11, color:'var(--muted)'}}>{cust.CustomerNumber}</div>
+                        </td>
+                        <td style={{padding:'12px', textAlign:'right', fontSize:13, fontWeight:700}}>
+                          {fmt(cust.TotalAmount)}
+                        </td>
+                        <td style={{padding:'12px', textAlign:'right', fontSize:13, fontWeight:700}}>
+                          {fmtWeight(cust.TotalWeight)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
