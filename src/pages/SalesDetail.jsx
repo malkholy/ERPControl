@@ -26,6 +26,12 @@ function fmt(val) {
   return n.toFixed(2);
 }
 
+function fmtWeight(val) {
+  if (val == null || val === '') return '—';
+  const n = Number(val);
+  return fmt(n) + ' kg';
+}
+
 function pct(a, b) {
   if (!a || !b || Number(b) === 0) return '—';
   return ((Number(a) / Number(b)) * 100).toFixed(1) + '%';
@@ -170,6 +176,20 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
   const ytdTotal2025    = Number(data?.SalesAmount2025||0);
   const ytdTotal2026    = Number(data?.SalesAmount2026||0);
 
+  // Weight metrics calculations
+  const totalWeight       = Number(data?.TotalWeight || 0);
+  const prevTotalWeight   = Number(data?.PrevTotalWeight || 0);
+  const ytdWeight2025     = Number(data?.YTDWeight2025 || 0);
+  const ytdWeight2026     = Number(data?.YTDWeight2026 || 0);
+  const whiteWeight       = Number(data?.WhiteWeight || 0);
+  const colorCenterWeight = Number(data?.ColorCenterWeight || 0);
+  const projectWeight     = Number(data?.ProjectWeight || 0);
+  const exportWeight      = Number(data?.ExportWeight || 0);
+
+  const localWeightTotal  = whiteWeight + colorCenterWeight + projectWeight;
+  const localWeight       = Math.max(0, totalWeight - exportWeight);
+  const otherWeight       = Math.max(0, localWeight - localWeightTotal);
+
   return (
     <div>
       {/* Header Card */}
@@ -209,6 +229,11 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
 
       {error && <div className="err-page">⚠ {error}</div>}
 
+      {/* SECTION 1: FINANCIAL METRICS */}
+      <div className="section-label" style={{marginTop:16, marginBottom:12, fontSize:14, fontWeight:700, color:'var(--orange)', display:'flex', alignItems:'center', gap:8}}>
+        <span>💵</span> Financial Metrics & Collections
+      </div>
+
       {/* KPI Cards */}
       <div className="kpi-grid" style={{gridTemplateColumns:'repeat(4,1fr)', marginBottom:24}}>
         {[
@@ -230,7 +255,7 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
       </div>
 
       {/* 3 panels */}
-      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16}}>
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, marginBottom:32}}>
         <div style={card}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
             <span style={{fontSize:15, fontWeight:700}}>Sales Breakdown</span>
@@ -277,6 +302,78 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                 <span style={{fontSize:13, fontWeight:r.bold?700:500}}>{r.icon} {r.label}</span>
                 <span style={{fontSize:13, textAlign:'right', color:'var(--muted)', fontWeight:r.bold?700:400}}>{fmt(r.p)}</span>
                 <span style={{fontSize:13, textAlign:'right', fontWeight:700}}>{fmt(r.c)}</span>
+                <span style={{textAlign:'right'}}><GrowthBadge prev={r.p} curr={r.c} /></span>
+              </div>
+            ))}
+          </>}
+        </div>
+      </div>
+
+      {/* SECTION 2: WEIGHT & TONNAGE METRICS */}
+      <div className="section-label" style={{marginTop:32, marginBottom:12, fontSize:14, fontWeight:700, color:'var(--orange)', display:'flex', alignItems:'center', gap:8}}>
+        <span>⚖️</span> Weight & Tonnage Metrics
+      </div>
+
+      {/* Weight KPI Cards */}
+      <div className="kpi-grid" style={{gridTemplateColumns:'repeat(4,1fr)', marginBottom:24}}>
+        {[
+          { label:'Period Weight', value:fmtWeight(totalWeight), color:null },
+          { label:'Prev Period Weight', value:fmtWeight(prevTotalWeight), color:null },
+          { label:'Period Growth', value: growth(prevTotalWeight, totalWeight) !== null ? (growth(prevTotalWeight, totalWeight) >= 0 ? '▲ ' : '▼ ') + growth(prevTotalWeight, totalWeight).toFixed(1) + '%' : '—',
+            color: growth(prevTotalWeight, totalWeight) !== null ? (growth(prevTotalWeight, totalWeight) >= 0 ? 'var(--green)' : 'var(--red)') : null,
+            sub: 'vs Prev Year Period' },
+          { label:'YTD Weight Growth', value: growth(ytdWeight2025, ytdWeight2026) !== null ? (growth(ytdWeight2025, ytdWeight2026) >= 0 ? '▲ ' : '▼ ') + growth(ytdWeight2025, ytdWeight2026).toFixed(1) + '%' : '—',
+            color: growth(ytdWeight2025, ytdWeight2026) !== null ? (growth(ytdWeight2025, ytdWeight2026) >= 0 ? 'var(--green)' : 'var(--red)') : null,
+            sub: `${year-1} vs ${year} YTD` },
+        ].map((k,i) => (
+          <div key={i} className="kpi-card">
+            {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
+              <div className="kpi-label">{k.label}</div>
+              <div className="kpi-value" style={{color:k.color||'inherit'}}>{k.value}</div>
+              <div className="kpi-change" style={{color:k.color||'var(--muted)'}}>{k.sub||periodLabel}</div>
+            </>}
+          </div>
+        ))}
+      </div>
+
+      {/* 2 Weight Panels */}
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:24}}>
+        {/* Card 1: Weight Breakdown by Customer Type */}
+        <div style={card}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+            <span style={{fontSize:15, fontWeight:700}}>Weight Breakdown by Customer Type</span>
+            <span style={{fontSize:12, color:'var(--muted)'}}>{periodLabel}</span>
+          </div>
+          {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
+            <BRow icon="👥" label="White Customers" amount={fmtWeight(whiteWeight)}       pctVal={pct(whiteWeight,totalWeight)}       color="var(--green)" />
+            <BRow icon="🎨" label="Color Centers"   amount={fmtWeight(colorCenterWeight)} pctVal={pct(colorCenterWeight,totalWeight)} color="var(--amber)" />
+            <BRow icon="🏗️" label="Projects"        amount={fmtWeight(projectWeight)}     pctVal={pct(projectWeight,totalWeight)}     color="#7c3aed" />
+            <BRow icon="🌍" label="Export"          amount={fmtWeight(exportWeight)}      pctVal={pct(exportWeight,totalWeight)}      color="var(--blue)" />
+            <BRow icon="📦" label="Other"           amount={fmtWeight(otherWeight)}       pctVal={pct(otherWeight,totalWeight)}       color="var(--muted)" />
+            <BRow label="Total Weight" amount={fmtWeight(totalWeight)} pctVal="100%" bold color="var(--text)" />
+          </>}
+        </div>
+
+        {/* Card 2: Weight YoY Comparison */}
+        <div style={card}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+            <span style={{fontSize:15, fontWeight:700}}>Weight YoY Comparison</span>
+            <span style={{fontSize:12, color:'var(--muted)'}}>Period vs YTD</span>
+          </div>
+          {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 90px 90px 72px', gap:6, padding:'6px 0', borderBottom:'1px solid var(--border)'}}>
+              {['Period',String(year-1),String(year),'Growth'].map((h,i)=>(
+                <span key={i} style={{fontSize:10, fontWeight:700, color:'var(--muted)', textTransform:'uppercase', textAlign:i>0?'right':'left'}}>{h}</span>
+              ))}
+            </div>
+            {[
+              {icon:'⚖️', label:period === 'yearly' ? 'Yearly' : period === 'quarterly' ? 'Quarterly' : 'Monthly', p:prevTotalWeight, c:totalWeight},
+              {icon:'📈', label:'YTD Weight', p:ytdWeight2025, c:ytdWeight2026, bold:true},
+            ].map((r,i) => (
+              <div key={i} style={{display:'grid', gridTemplateColumns:'1fr 90px 90px 72px', gap:6, padding:'10px 0', borderBottom:i<1?'1px solid var(--border)':'none', alignItems:'center'}}>
+                <span style={{fontSize:13, fontWeight:r.bold?700:500}}>{r.icon} {r.label}</span>
+                <span style={{fontSize:13, textAlign:'right', color:'var(--muted)', fontWeight:r.bold?700:400}}>{fmtWeight(r.p)}</span>
+                <span style={{fontSize:13, textAlign:'right', fontWeight:700}}>{fmtWeight(r.c)}</span>
                 <span style={{textAlign:'right'}}><GrowthBadge prev={r.p} curr={r.c} /></span>
               </div>
             ))}
