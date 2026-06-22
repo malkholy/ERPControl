@@ -766,6 +766,10 @@ begin
     declare @YTDColorCenterWeight2026 dec(18,2)
     declare @YTDProjectWeight2026 dec(18,2)
     declare @YTDExportWeight2026 dec(18,2)
+    declare @ColorCenterVolume dec(18,2)
+    declare @PrevColorCenterVolume dec(18,2)
+    declare @YTDColorCenterVolume2025 dec(18,2)
+    declare @YTDColorCenterVolume2026 dec(18,2)
 
     set @SQL2 = N'select @out = Sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where InvoiceYear=' + cast(@Year as nvarchar) + ' and ' + @MonthFilter2
     exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@TotalSalesAmount output
@@ -820,6 +824,12 @@ begin
     set @SQL2 = N'select @out = isnull(Sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate)=' + cast((@Year-1) as nvarchar) + ' and ' + replace(@MonthFilter2,'InvoiceDate','a.InvoiceDate') + ' and b.CustomerNumber like ''6%'''
     exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@PrevExportWeight output
 
+    set @SQL2 = N'select @out = isnull(Sum(a.InvoicedQuantity * b.Volume),0) from acr.CustomerInvoiceLine a left outer join inv.ItemMaster b on a.ItemID=b.ItemID left outer join acr.CustomerInvoiceHeader c on a.IntID=c.InternalID where year(a.InvoiceDate)=' + cast(@Year as nvarchar) + ' and ' + replace(@MonthFilter2,'InvoiceDate','a.InvoiceDate') + ' and c.SalesPersonNumber like ''2%'''
+    exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@ColorCenterVolume output
+
+    set @SQL2 = N'select @out = isnull(Sum(a.InvoicedQuantity * b.Volume),0) from acr.CustomerInvoiceLine a left outer join inv.ItemMaster b on a.ItemID=b.ItemID left outer join acr.CustomerInvoiceHeader c on a.IntID=c.InternalID where year(a.InvoiceDate)=' + cast((@Year-1) as nvarchar) + ' and ' + replace(@MonthFilter2,'InvoiceDate','a.InvoiceDate') + ' and c.SalesPersonNumber like ''2%'''
+    exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@PrevColorCenterVolume output
+
     select @SalesAmount2025 = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = (@Year-1) and InvoiceDate <= dateadd(year,-1,cast(getdate() as date))
     select @SalesAmount2026 = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = @Year and InvoiceDate <= cast(getdate() as date)
     select @YTD2025Export2  = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = (@Year-1) and InvoiceDate <= dateadd(year,-1,cast(getdate() as date)) and CustomerNumber like '6%'
@@ -838,6 +848,9 @@ begin
     select @YTDProjectWeight2026 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) and b.SalesPersonNumber like '3%'
     select @YTDExportWeight2026 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) and b.CustomerNumber like '6%'
 
+    select @YTDColorCenterVolume2025 = isnull(sum(a.InvoicedQuantity * b.Volume),0) from acr.CustomerInvoiceLine a left outer join inv.ItemMaster b on a.ItemID=b.ItemID left outer join acr.CustomerInvoiceHeader c on a.IntID=c.InternalID where year(a.InvoiceDate) = (@Year-1) and a.InvoiceDate <= dateadd(year,-1,cast(getdate() as date)) and c.SalesPersonNumber like '2%'
+    select @YTDColorCenterVolume2026 = isnull(sum(a.InvoicedQuantity * b.Volume),0) from acr.CustomerInvoiceLine a left outer join inv.ItemMaster b on a.ItemID=b.ItemID left outer join acr.CustomerInvoiceHeader c on a.IntID=c.InternalID where year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) and c.SalesPersonNumber like '2%'
+
     select @WhiteSales as WhiteSales, @ColorCenterSales as ColorCenterSales, @ProjectSales as ProjectSales,
            @ExportSales as ExportSales, @SalesAmount2025 as SalesAmount2025, @SalesAmount2026 as SalesAmount2026,
            @YTD2025Export2 as YTD2025Export, @YTD2026Export2 as YTD2026Export,
@@ -852,7 +865,9 @@ begin
            @YTDWhiteWeight2025 as YTDWhiteWeight2025, @YTDColorCenterWeight2025 as YTDColorCenterWeight2025,
            @YTDProjectWeight2025 as YTDProjectWeight2025, @YTDExportWeight2025 as YTDExportWeight2025,
            @YTDWhiteWeight2026 as YTDWhiteWeight2026, @YTDColorCenterWeight2026 as YTDColorCenterWeight2026,
-           @YTDProjectWeight2026 as YTDProjectWeight2026, @YTDExportWeight2026 as YTDExportWeight2026
+           @YTDProjectWeight2026 as YTDProjectWeight2026, @YTDExportWeight2026 as YTDExportWeight2026,
+           @ColorCenterVolume as ColorCenterVolume, @PrevColorCenterVolume as PrevColorCenterVolume,
+           @YTDColorCenterVolume2025 as YTDColorCenterVolume2025, @YTDColorCenterVolume2026 as YTDColorCenterVolume2026
 end
 
 

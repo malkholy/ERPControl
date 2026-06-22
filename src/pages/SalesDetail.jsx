@@ -32,6 +32,12 @@ function fmtWeight(val) {
   return fmt(n) + ' kg';
 }
 
+function fmtVolume(val) {
+  if (val == null || val === '') return '—';
+  const n = Number(val);
+  return fmt(n) + ' L';
+}
+
 function pct(a, b) {
   if (!a || !b || Number(b) === 0) return '—';
   return ((Number(a) / Number(b)) * 100).toFixed(1) + '%';
@@ -219,6 +225,12 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
   const ytdLocalWeight2025      = Math.max(0, ytdWeight2025 - ytdExportWeight2025);
   const ytdOtherWeight2025       = Math.max(0, ytdLocalWeight2025 - ytdLocalWeightTotal2025);
 
+  // Volume metrics calculations (Color Center Liters)
+  const colorCenterVolume     = Number(data?.ColorCenterVolume || 0);
+  const prevColorCenterVolume = Number(data?.PrevColorCenterVolume || 0);
+  const ytdColorCenterVolume2025 = Number(data?.YTDColorCenterVolume2025 || 0);
+  const ytdColorCenterVolume2026 = Number(data?.YTDColorCenterVolume2026 || 0);
+
   const comparisonRows = comparisonMode === 'period' ? [
     { icon: '👥', label: 'White Customers', p: prevWhiteWeight,       c: whiteWeight },
     { icon: '🎨', label: 'Color Centers',   p: prevColorCenterWeight, c: colorCenterWeight },
@@ -381,9 +393,9 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
         ))}
       </div>
 
-      {/* Weight YoY Comparison Panel */}
-      <div style={{marginBottom:24}}>
-        {/* Card: Weight YoY Comparison */}
+      {/* Weight & Volume YoY Comparison Panels */}
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:24}}>
+        {/* Card 1: Weight YoY Comparison */}
         <div style={card}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
             <span style={{fontSize:15, fontWeight:700}}>Weight YoY Comparison</span>
@@ -409,6 +421,32 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                 <span style={{fontSize:13, fontWeight:r.bold?700:500}}>{r.icon} {r.label}</span>
                 <span style={{fontSize:13, textAlign:'right', color:'var(--muted)', fontWeight:r.bold?700:400}}>{fmtWeight(r.p)}</span>
                 <span style={{fontSize:13, textAlign:'right', fontWeight:700}}>{fmtWeight(r.c)}</span>
+                <span style={{textAlign:'right'}}><GrowthBadge prev={r.p} curr={r.c} /></span>
+              </div>
+            ))}
+          </>}
+        </div>
+
+        {/* Card 2: Color Center Volume YoY Comparison */}
+        <div style={card}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+            <span style={{fontSize:15, fontWeight:700}}>Color Center Volume (Liters)</span>
+            <span style={{fontSize:12, color:'var(--muted)'}}>YoY Comparison</span>
+          </div>
+          {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 90px 90px 72px', gap:6, padding:'6px 0', borderBottom:'1px solid var(--border)'}}>
+              {['Period',String(year-1),String(year),'Growth'].map((h,i)=>(
+                <span key={i} style={{fontSize:10, fontWeight:700, color:'var(--muted)', textTransform:'uppercase', textAlign:i>0?'right':'left'}}>{h}</span>
+              ))}
+            </div>
+            {[
+              {icon:'🧪', label:period === 'yearly' ? 'Yearly Volume' : period === 'quarterly' ? 'Quarterly Volume' : 'Monthly Volume', p:prevColorCenterVolume, c:colorCenterVolume},
+              {icon:'📈', label:'YTD Volume', p:ytdColorCenterVolume2025, c:ytdColorCenterVolume2026, bold:true},
+            ].map((r,i) => (
+              <div key={i} style={{display:'grid', gridTemplateColumns:'1fr 90px 90px 72px', gap:6, padding:'10px 0', borderBottom:i<1?'1px solid var(--border)':'none', alignItems:'center'}}>
+                <span style={{fontSize:13, fontWeight:r.bold?700:500}}>{r.icon} {r.label}</span>
+                <span style={{fontSize:13, textAlign:'right', color:'var(--muted)', fontWeight:r.bold?700:400}}>{fmtVolume(r.p)}</span>
+                <span style={{fontSize:13, textAlign:'right', fontWeight:700}}>{fmtVolume(r.c)}</span>
                 <span style={{textAlign:'right'}}><GrowthBadge prev={r.p} curr={r.c} /></span>
               </div>
             ))}
