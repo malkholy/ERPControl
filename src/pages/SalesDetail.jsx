@@ -505,13 +505,13 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
           zIndex: 1000, display: 'flex', justifyContent: 'flex-end',
         }} onClick={() => setDrawerOpen(false)}>
           <div style={{
-            width: '540px', background: 'var(--surface)', borderLeft: '1px solid var(--border)',
+            width: '760px', background: 'var(--surface)', borderLeft: '1px solid var(--border)',
             height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-lg)',
             padding: '24px', overflowY: 'auto',
           }} onClick={e => e.stopPropagation()}>
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20}}>
               <div>
-                <div style={{fontSize:11, color:'var(--muted)', textTransform:'uppercase', fontWeight:700, letterSpacing:'.08em'}}>Customer Breakdown</div>
+                <div style={{fontSize:11, color:'var(--muted)', textTransform:'uppercase', fontWeight:700, letterSpacing:'.08em'}}>YTD Comparison Breakdown</div>
                 <div style={{fontSize:20, fontWeight:800, color:'var(--orange)'}}>{drawerType}</div>
               </div>
               <button onClick={() => setDrawerOpen(false)} style={{
@@ -534,9 +534,17 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                 <table style={{width:'100%', borderCollapse:'collapse'}}>
                   <thead>
                     <tr>
-                      <th style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'}}>Customer</th>
-                      <th style={{padding:'8px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'}}>Amount</th>
-                      <th style={{padding:'8px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'}}>Weight</th>
+                      <th rowSpan={2} style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', verticalAlign:'middle'}}>Customer</th>
+                      <th colSpan={3} style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>YTD Sales Amount (EGP)</th>
+                      <th colSpan={3} style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>YTD Weight</th>
+                    </tr>
+                    <tr>
+                      <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>{year}</th>
+                      <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>{year - 1}</th>
+                      <th style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>% Growth</th>
+                      <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{year}</th>
+                      <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{year - 1}</th>
+                      <th style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>% Growth</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -545,15 +553,27 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                         borderBottom:'1px solid var(--border2)',
                         background: i % 2 === 0 ? 'var(--soft)' : 'transparent'
                       }}>
-                        <td style={{padding:'12px', fontSize:13}}>
+                        <td style={{padding:'10px 12px', fontSize:13}}>
                           <div style={{fontWeight:600}}>{cust.CustomerName}</div>
                           <div style={{fontSize:11, color:'var(--muted)'}}>{cust.CustomerNumber}</div>
                         </td>
-                        <td style={{padding:'12px', textAlign:'right', fontSize:13, fontWeight:700}}>
-                          {fmt(cust.TotalAmount)}
+                        <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, fontWeight:600}}>
+                          {fmt(cust.AmountYTD2026)}
                         </td>
-                        <td style={{padding:'12px', textAlign:'right', fontSize:13, fontWeight:700}}>
-                          {fmtWeight(cust.TotalWeight)}
+                        <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, color:'var(--muted)'}}>
+                          {fmt(cust.AmountYTD2025)}
+                        </td>
+                        <td style={{padding:'10px 12px', textAlign:'center', fontSize:12}}>
+                          <GrowthBadge prev={cust.AmountYTD2025} curr={cust.AmountYTD2026} />
+                        </td>
+                        <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, fontWeight:600}}>
+                          {fmtWeight(cust.WeightYTD2026)}
+                        </td>
+                        <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, color:'var(--muted)'}}>
+                          {fmtWeight(cust.WeightYTD2025)}
+                        </td>
+                        <td style={{padding:'10px 12px', textAlign:'center', fontSize:12}}>
+                          <GrowthBadge prev={cust.WeightYTD2025} curr={cust.WeightYTD2026} />
                         </td>
                       </tr>
                     ))}

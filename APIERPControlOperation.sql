@@ -926,14 +926,16 @@ begin
         select top(25) 
             b.CustomerNo as CustomerNumber, 
             isnull(max(b.CustomerExtraName), ''Unknown Customer'') as CustomerName,
-            Sum(a.LineTaxtableAmount * a.LineExchangeRate) as TotalAmount,
-            Sum(isnull(a.LineWeight, 0)) as TotalWeight
+            sum(case when year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' and a.InvoiceDate <= cast(getdate() as date) then a.LineTaxtableAmount * a.LineExchangeRate else 0 end) as AmountYTD2026,
+            sum(case when year(a.InvoiceDate) = ' + cast(@Year - 1 as nvarchar) + ' and a.InvoiceDate <= dateadd(year, -1, cast(getdate() as date)) then a.LineTaxtableAmount * a.LineExchangeRate else 0 end) as AmountYTD2025,
+            sum(case when year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' and a.InvoiceDate <= cast(getdate() as date) then isnull(a.LineWeight, 0) else 0 end) as WeightYTD2026,
+            sum(case when year(a.InvoiceDate) = ' + cast(@Year - 1 as nvarchar) + ' and a.InvoiceDate <= dateadd(year, -1, cast(getdate() as date)) then isnull(a.LineWeight, 0) else 0 end) as WeightYTD2025
         from acr.CustomerInvoiceLine a
         inner join acr.CustomerMaster b on a.CustomerNo = b.CustomerNo
-        where year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' and ' + @MonthFilter4 + '
+        where (year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' or year(a.InvoiceDate) = ' + cast(@Year - 1 as nvarchar) + ')
           and ' + @Filter4 + '
         group by b.CustomerNo
-        order by TotalAmount desc'
+        order by AmountYTD2026 desc'
 
     exec sp_executesql @SQL4
 end
