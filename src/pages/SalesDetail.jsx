@@ -164,6 +164,7 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
   const collRatio       = totalFinalAmount ? ((totalCollection/totalFinalAmount)*100).toFixed(1)
                         : (totalSales ? ((totalCollection/totalSales)*100).toFixed(1) : null);
   const localTotal      = Number(data?.WhiteSales||0)+Number(data?.ColorCenterSales||0)+Number(data?.ProjectSales||0);
+  const otherSales      = Math.max(0, localSales - localTotal);
   const ytdLocal2025    = Number(data?.SalesAmount2025||0)-Number(data?.YTD2025Export||0);
   const ytdLocal2026    = Number(data?.SalesAmount2026||0)-Number(data?.YTD2026Export||0);
   const ytdTotal2025    = Number(data?.SalesAmount2025||0);
@@ -248,10 +249,11 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
             <span style={{fontSize:12, color:'var(--muted)'}}>Local Sales</span>
           </div>
           {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
-            <BRow icon="👥" label="White Customers" amount={fmt(data?.WhiteSales)}       pctVal={pct(data?.WhiteSales,localTotal)}       color="var(--green)" />
-            <BRow icon="🎨" label="Color Centers"   amount={fmt(data?.ColorCenterSales)} pctVal={pct(data?.ColorCenterSales,localTotal)} color="var(--amber)" />
-            <BRow icon="🏗️" label="Projects"        amount={fmt(data?.ProjectSales)}     pctVal={pct(data?.ProjectSales,localTotal)}     color="#7c3aed" />
-            <BRow label="Total Local" amount={fmt(localTotal)} pctVal="100%" bold color="var(--text)" />
+            <BRow icon="👥" label="White Customers" amount={fmt(data?.WhiteSales)}       pctVal={pct(data?.WhiteSales,localSales)}       color="var(--green)" />
+            <BRow icon="🎨" label="Color Centers"   amount={fmt(data?.ColorCenterSales)} pctVal={pct(data?.ColorCenterSales,localSales)} color="var(--amber)" />
+            <BRow icon="🏗️" label="Projects"        amount={fmt(data?.ProjectSales)}     pctVal={pct(data?.ProjectSales,localSales)}     color="#7c3aed" />
+            <BRow icon="📦" label="Other"           amount={fmt(otherSales)}             pctVal={pct(otherSales,localSales)}             color="var(--muted)" />
+            <BRow label="Total Local" amount={fmt(localSales)} pctVal="100%" bold color="var(--text)" />
           </>}
         </div>
 
