@@ -910,29 +910,29 @@ begin
     else
         set @MonthFilter4 = 'month(a.InvoiceDate) IN (' + @Months4 + ')'
 
-    -- Filter expression based on the selected type
+    -- Filter expression based on the selected type using CustomerMaster columns
     declare @Filter4 nvarchar(max)
     set @Filter4 = case @CustomerType4
-        when 'White Customers' then 'b.SalesPersonNumber like ''1%'' and b.CustomerNumber not like ''6%'''
-        when 'Color Centers' then 'b.SalesPersonNumber like ''2%'' and b.CustomerNumber not like ''6%'''
-        when 'Projects' then 'b.SalesPersonNumber like ''3%'' and b.CustomerNumber not like ''6%'''
-        when 'Export' then 'b.CustomerNumber like ''6%'''
-        else 'b.SalesPersonNumber not like ''1%'' and b.SalesPersonNumber not like ''2%'' and b.SalesPersonNumber not like ''3%'' and b.CustomerNumber not like ''6%'''
+        when 'White Customers' then 'b.CustomerSalesPerson like ''1%'' and b.CustomerNo not like ''6%'''
+        when 'Color Centers' then 'b.CustomerSalesPerson like ''2%'' and b.CustomerNo not like ''6%'''
+        when 'Projects' then 'b.CustomerSalesPerson like ''3%'' and b.CustomerNo not like ''6%'''
+        when 'Export' then 'b.CustomerNo like ''6%'''
+        else 'b.CustomerSalesPerson not like ''1%'' and b.CustomerSalesPerson not like ''2%'' and b.CustomerSalesPerson not like ''3%'' and b.CustomerNo not like ''6%'''
     end
 
     -- Run query to get the grouped table
     declare @SQL4 nvarchar(max)
     set @SQL4 = N'
         select top(25) 
-            b.CustomerNumber, 
+            b.CustomerNo as CustomerNumber, 
             isnull(max(b.CustomerExtraName), ''Unknown Customer'') as CustomerName,
-            Sum(a.LineTaxtableAmount * b.ExchangeRate) as TotalAmount,
+            Sum(a.LineTaxtableAmount * a.LineExchangeRate) as TotalAmount,
             Sum(isnull(a.LineWeight, 0)) as TotalWeight
         from acr.CustomerInvoiceLine a
-        inner join acr.CustomerInvoiceHeader b on a.IntID = b.InternalID
+        inner join acr.CustomerMaster b on a.CustomerNo = b.CustomerNo
         where year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' and ' + @MonthFilter4 + '
           and ' + @Filter4 + '
-        group by b.CustomerNumber
+        group by b.CustomerNo
         order by TotalAmount desc'
 
     exec sp_executesql @SQL4
