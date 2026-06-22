@@ -745,6 +745,7 @@ begin
 
     declare @SQL2 nvarchar(max)
     declare @YTD2025Export2 dec(18,5), @YTD2026Export2 dec(18,5)
+    declare @TotalFinalAmount dec(18,2)
 
     set @SQL2 = N'select @out = Sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where InvoiceYear=' + cast(@Year as nvarchar) + ' and ' + @MonthFilter2
     exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@TotalSalesAmount output
@@ -766,6 +767,9 @@ begin
     set @SQL2 = N'select @out = Sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where InvoiceYear=' + cast(@Year as nvarchar) + ' and ' + @MonthFilter2 + ' and CustomerNumber like ''6%'''
     exec sp_executesql @SQL2, N'@out dec(18,5) output', @out=@ExportSales output
 
+    set @SQL2 = N'select @out = isnull(Sum(TotalFinalAmountBase),0) from acr.CustomerInvoiceHeader where InvoiceYear=' + cast(@Year as nvarchar) + ' and ' + @MonthFilter2
+    exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@TotalFinalAmount output
+
     select @SalesAmount2025 = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = (@Year-1) and InvoiceDate <= dateadd(year,-1,cast(getdate() as date))
     select @SalesAmount2026 = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = @Year and InvoiceDate <= cast(getdate() as date)
     select @YTD2025Export2  = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = (@Year-1) and InvoiceDate <= dateadd(year,-1,cast(getdate() as date)) and CustomerNumber like '6%'
@@ -774,7 +778,8 @@ begin
     select @WhiteSales as WhiteSales, @ColorCenterSales as ColorCenterSales, @ProjectSales as ProjectSales,
            @ExportSales as ExportSales, @SalesAmount2025 as SalesAmount2025, @SalesAmount2026 as SalesAmount2026,
            @YTD2025Export2 as YTD2025Export, @YTD2026Export2 as YTD2026Export,
-           @TotalSalesAmount as TotalSalesAmount, @TotalCollection as TotalCollection, @CustomerBalance as CustomerBalance
+           @TotalSalesAmount as TotalSalesAmount, @TotalCollection as TotalCollection, @CustomerBalance as CustomerBalance,
+           @TotalFinalAmount as TotalFinalAmount
 end
 
 

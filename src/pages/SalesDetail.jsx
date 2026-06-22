@@ -156,11 +156,13 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
   useEffect(() => { load(); }, [period, months, quarters, year]);
 
   const totalSales      = Number(data?.TotalSalesAmount || controlData?.TotalSalesAmount || 0);
+  const totalFinalAmount = Number(data?.TotalFinalAmount || 0);
   const totalCollection = Number(data?.TotalCollection  || controlData?.TotalCollection  || 0);
   const customerBalance = Number(data?.CustomerBalance  || controlData?.CustomerBalance  || 0);
   const exportSales     = Number(data?.ExportSales      || 0);
   const localSales      = totalSales - exportSales;
-  const collRatio       = totalSales ? ((totalCollection/totalSales)*100).toFixed(1) : null;
+  const collRatio       = totalFinalAmount ? ((totalCollection/totalFinalAmount)*100).toFixed(1)
+                        : (totalSales ? ((totalCollection/totalSales)*100).toFixed(1) : null);
   const localTotal      = Number(data?.WhiteSales||0)+Number(data?.ColorCenterSales||0)+Number(data?.ProjectSales||0);
   const ytdLocal2025    = Number(data?.SalesAmount2025||0)-Number(data?.YTD2025Export||0);
   const ytdLocal2026    = Number(data?.SalesAmount2026||0)-Number(data?.YTD2026Export||0);
