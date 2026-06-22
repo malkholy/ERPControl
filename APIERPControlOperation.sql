@@ -920,24 +920,29 @@ begin
         else 'b.CustomerSalesPerson not like ''1%'' and b.CustomerSalesPerson not like ''2%'' and b.CustomerSalesPerson not like ''3%'' and b.CustomerNo not like ''6%'''
     end
 
+    set @Filter4 = isnull(@Filter4, '1=1')
+
+    if @Year is null or @Year = 0
+        set @Year = year(getdate())
+
     -- Run query to get the grouped table
     declare @SQL4 nvarchar(max)
     set @SQL4 = N'
         select top(25) 
             b.CustomerNo as CustomerNumber, 
             isnull(max(b.CustomerExtraName), ''Unknown Customer'') as CustomerName,
-            sum(case when year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' and a.InvoiceDate <= cast(getdate() as date) then a.LineTaxtableAmount * a.LineExchangeRate else 0 end) as AmountYTD2026,
-            sum(case when year(a.InvoiceDate) = ' + cast(@Year - 1 as nvarchar) + ' and a.InvoiceDate <= dateadd(year, -1, cast(getdate() as date)) then a.LineTaxtableAmount * a.LineExchangeRate else 0 end) as AmountYTD2025,
-            sum(case when year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' and a.InvoiceDate <= cast(getdate() as date) then isnull(a.LineWeight, 0) else 0 end) as WeightYTD2026,
-            sum(case when year(a.InvoiceDate) = ' + cast(@Year - 1 as nvarchar) + ' and a.InvoiceDate <= dateadd(year, -1, cast(getdate() as date)) then isnull(a.LineWeight, 0) else 0 end) as WeightYTD2025
+            sum(case when year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) then a.LineTaxtableAmount * a.LineExchangeRate else 0 end) as AmountYTD2026,
+            sum(case when year(a.InvoiceDate) = (@Year - 1) and a.InvoiceDate <= dateadd(year, -1, cast(getdate() as date)) then a.LineTaxtableAmount * a.LineExchangeRate else 0 end) as AmountYTD2025,
+            sum(case when year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) then isnull(a.LineWeight, 0) else 0 end) as WeightYTD2026,
+            sum(case when year(a.InvoiceDate) = (@Year - 1) and a.InvoiceDate <= dateadd(year, -1, cast(getdate() as date)) then isnull(a.LineWeight, 0) else 0 end) as WeightYTD2025
         from acr.CustomerInvoiceLine a
         inner join acr.CustomerMaster b on a.CustomerNo = b.CustomerNo
-        where (year(a.InvoiceDate) = ' + cast(@Year as nvarchar) + ' or year(a.InvoiceDate) = ' + cast(@Year - 1 as nvarchar) + ')
+        where (year(a.InvoiceDate) = @Year or year(a.InvoiceDate) = (@Year - 1))
           and ' + @Filter4 + '
         group by b.CustomerNo
-        order by AmountYTD2026 desc'
+        order by sum(case when year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) then a.LineTaxtableAmount * a.LineExchangeRate else 0 end) desc'
 
-    exec sp_executesql @SQL4
+    exec sp_executesql @SQL4, N'@Year int', @Year = @Year
 end
 
 
