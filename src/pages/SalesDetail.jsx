@@ -594,7 +594,9 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                             padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'
                           }}>YTD Sales Amount (EGP)</th>
                           <th colSpan={3} style={{
-                            position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)',
+                            position: 'sticky', top: 0, zIndex: 2, 
+                            background: 'linear-gradient(rgba(100, 116, 139, 0.03), rgba(100, 116, 139, 0.03)), var(--surface)',
+                            borderLeft: '1px solid var(--border)',
                             padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'
                           }}>{isColorCenter ? 'YTD Volume' : 'YTD Weight'}</th>
                         </tr>
@@ -612,15 +614,19 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                             padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
                           }}>% Growth</th>
                           <th style={{
-                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            position: 'sticky', top: '29px', zIndex: 2, 
+                            background: 'linear-gradient(rgba(100, 116, 139, 0.03), rgba(100, 116, 139, 0.03)), var(--surface)',
+                            borderLeft: '1px solid var(--border)',
                             padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
                           }}>{year}</th>
                           <th style={{
-                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            position: 'sticky', top: '29px', zIndex: 2, 
+                            background: 'linear-gradient(rgba(100, 116, 139, 0.03), rgba(100, 116, 139, 0.03)), var(--surface)',
                             padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
                           }}>{year - 1}</th>
                           <th style={{
-                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            position: 'sticky', top: '29px', zIndex: 2, 
+                            background: 'linear-gradient(rgba(100, 116, 139, 0.03), rgba(100, 116, 139, 0.03)), var(--surface)',
                             padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
                           }}>% Growth</th>
                         </tr>
@@ -644,13 +650,23 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                             <td style={{padding:'10px 12px', textAlign:'center', fontSize:12}}>
                               <GrowthBadge prev={cust.AmountYTD2025} curr={cust.AmountYTD2026} />
                             </td>
-                            <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, fontWeight:600}}>
+                            <td style={{
+                              padding:'10px 12px', textAlign:'right', fontSize:13, fontWeight:600,
+                              borderLeft: '1px solid var(--border)',
+                              background: 'rgba(100, 116, 139, 0.02)'
+                            }}>
                               {isColorCenter ? fmtVolume(cust.VolumeYTD2026) : fmtWeight(cust.WeightYTD2026)}
                             </td>
-                            <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, color:'var(--muted)'}}>
+                            <td style={{
+                              padding:'10px 12px', textAlign:'right', fontSize:13, color:'var(--muted)',
+                              background: 'rgba(100, 116, 139, 0.02)'
+                            }}>
                               {isColorCenter ? fmtVolume(cust.VolumeYTD2025) : fmtWeight(cust.WeightYTD2025)}
                             </td>
-                            <td style={{padding:'10px 12px', textAlign:'center', fontSize:12}}>
+                            <td style={{
+                              padding:'10px 12px', textAlign:'center', fontSize:12,
+                              background: 'rgba(100, 116, 139, 0.02)'
+                            }}>
                               {isColorCenter ? (
                                 <GrowthBadge prev={cust.VolumeYTD2025} curr={cust.VolumeYTD2026} />
                               ) : (
