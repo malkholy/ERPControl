@@ -754,6 +754,18 @@ begin
     declare @ColorCenterWeight dec(18,2)
     declare @ProjectWeight dec(18,2)
     declare @ExportWeight dec(18,2)
+    declare @PrevWhiteWeight dec(18,2)
+    declare @PrevColorCenterWeight dec(18,2)
+    declare @PrevProjectWeight dec(18,2)
+    declare @PrevExportWeight dec(18,2)
+    declare @YTDWhiteWeight2025 dec(18,2)
+    declare @YTDColorCenterWeight2025 dec(18,2)
+    declare @YTDProjectWeight2025 dec(18,2)
+    declare @YTDExportWeight2025 dec(18,2)
+    declare @YTDWhiteWeight2026 dec(18,2)
+    declare @YTDColorCenterWeight2026 dec(18,2)
+    declare @YTDProjectWeight2026 dec(18,2)
+    declare @YTDExportWeight2026 dec(18,2)
 
     set @SQL2 = N'select @out = Sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where InvoiceYear=' + cast(@Year as nvarchar) + ' and ' + @MonthFilter2
     exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@TotalSalesAmount output
@@ -796,6 +808,18 @@ begin
     set @SQL2 = N'select @out = isnull(Sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate)=' + cast(@Year as nvarchar) + ' and ' + replace(@MonthFilter2,'InvoiceDate','a.InvoiceDate') + ' and b.CustomerNumber like ''6%'''
     exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@ExportWeight output
 
+    set @SQL2 = N'select @out = isnull(Sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate)=' + cast((@Year-1) as nvarchar) + ' and ' + replace(@MonthFilter2,'InvoiceDate','a.InvoiceDate') + ' and b.SalesPersonNumber like ''1%'''
+    exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@PrevWhiteWeight output
+
+    set @SQL2 = N'select @out = isnull(Sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate)=' + cast((@Year-1) as nvarchar) + ' and ' + replace(@MonthFilter2,'InvoiceDate','a.InvoiceDate') + ' and b.SalesPersonNumber like ''2%'''
+    exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@PrevColorCenterWeight output
+
+    set @SQL2 = N'select @out = isnull(Sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate)=' + cast((@Year-1) as nvarchar) + ' and ' + replace(@MonthFilter2,'InvoiceDate','a.InvoiceDate') + ' and b.SalesPersonNumber like ''3%'''
+    exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@PrevProjectWeight output
+
+    set @SQL2 = N'select @out = isnull(Sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate)=' + cast((@Year-1) as nvarchar) + ' and ' + replace(@MonthFilter2,'InvoiceDate','a.InvoiceDate') + ' and b.CustomerNumber like ''6%'''
+    exec sp_executesql @SQL2, N'@out dec(18,2) output', @out=@PrevExportWeight output
+
     select @SalesAmount2025 = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = (@Year-1) and InvoiceDate <= dateadd(year,-1,cast(getdate() as date))
     select @SalesAmount2026 = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = @Year and InvoiceDate <= cast(getdate() as date)
     select @YTD2025Export2  = sum(TotalTaxtableAmount*ExchangeRate) from acr.CustomerInvoiceHeader where year(InvoiceDate) = (@Year-1) and InvoiceDate <= dateadd(year,-1,cast(getdate() as date)) and CustomerNumber like '6%'
@@ -803,6 +827,16 @@ begin
 
     select @YTDWeight2025 = isnull(sum(LineWeight),0) from acr.CustomerInvoiceLine where year(InvoiceDate) = (@Year-1) and InvoiceDate <= dateadd(year,-1,cast(getdate() as date))
     select @YTDWeight2026 = isnull(sum(LineWeight),0) from acr.CustomerInvoiceLine where year(InvoiceDate) = @Year and InvoiceDate <= cast(getdate() as date)
+
+    select @YTDWhiteWeight2025 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = (@Year-1) and a.InvoiceDate <= dateadd(year,-1,cast(getdate() as date)) and b.SalesPersonNumber like '1%'
+    select @YTDColorCenterWeight2025 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = (@Year-1) and a.InvoiceDate <= dateadd(year,-1,cast(getdate() as date)) and b.SalesPersonNumber like '2%'
+    select @YTDProjectWeight2025 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = (@Year-1) and a.InvoiceDate <= dateadd(year,-1,cast(getdate() as date)) and b.SalesPersonNumber like '3%'
+    select @YTDExportWeight2025 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = (@Year-1) and a.InvoiceDate <= dateadd(year,-1,cast(getdate() as date)) and b.CustomerNumber like '6%'
+
+    select @YTDWhiteWeight2026 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) and b.SalesPersonNumber like '1%'
+    select @YTDColorCenterWeight2026 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) and b.SalesPersonNumber like '2%'
+    select @YTDProjectWeight2026 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) and b.SalesPersonNumber like '3%'
+    select @YTDExportWeight2026 = isnull(sum(a.LineWeight),0) from acr.CustomerInvoiceLine a left outer join acr.CustomerInvoiceHeader b on a.IntID=b.InternalID where year(a.InvoiceDate) = @Year and a.InvoiceDate <= cast(getdate() as date) and b.CustomerNumber like '6%'
 
     select @WhiteSales as WhiteSales, @ColorCenterSales as ColorCenterSales, @ProjectSales as ProjectSales,
            @ExportSales as ExportSales, @SalesAmount2025 as SalesAmount2025, @SalesAmount2026 as SalesAmount2026,
@@ -812,7 +846,13 @@ begin
            @TotalWeight as TotalWeight, @PrevTotalWeight as PrevTotalWeight,
            @YTDWeight2025 as YTDWeight2025, @YTDWeight2026 as YTDWeight2026,
            @WhiteWeight as WhiteWeight, @ColorCenterWeight as ColorCenterWeight,
-           @ProjectWeight as ProjectWeight, @ExportWeight as ExportWeight
+           @ProjectWeight as ProjectWeight, @ExportWeight as ExportWeight,
+           @PrevWhiteWeight as PrevWhiteWeight, @PrevColorCenterWeight as PrevColorCenterWeight,
+           @PrevProjectWeight as PrevProjectWeight, @PrevExportWeight as PrevExportWeight,
+           @YTDWhiteWeight2025 as YTDWhiteWeight2025, @YTDColorCenterWeight2025 as YTDColorCenterWeight2025,
+           @YTDProjectWeight2025 as YTDProjectWeight2025, @YTDExportWeight2025 as YTDExportWeight2025,
+           @YTDWhiteWeight2026 as YTDWhiteWeight2026, @YTDColorCenterWeight2026 as YTDColorCenterWeight2026,
+           @YTDProjectWeight2026 as YTDProjectWeight2026, @YTDExportWeight2026 as YTDExportWeight2026
 end
 
 

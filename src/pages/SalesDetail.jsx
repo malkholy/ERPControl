@@ -144,6 +144,7 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
   const [quarters, setQuarters] = useState([init.Quarter || Math.ceil((now.getMonth()+1)/3)]);
   const [year, setYear] = useState(init.Year || now.getFullYear());
   const [data, setData] = useState(null);
+  const [comparisonMode, setComparisonMode] = useState('period'); // 'period' or 'ytd'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -181,14 +182,58 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
   const prevTotalWeight   = Number(data?.PrevTotalWeight || 0);
   const ytdWeight2025     = Number(data?.YTDWeight2025 || 0);
   const ytdWeight2026     = Number(data?.YTDWeight2026 || 0);
+
+  // Selected period weights (current vs previous year)
   const whiteWeight       = Number(data?.WhiteWeight || 0);
+  const prevWhiteWeight   = Number(data?.PrevWhiteWeight || 0);
   const colorCenterWeight = Number(data?.ColorCenterWeight || 0);
+  const prevColorCenterWeight = Number(data?.PrevColorCenterWeight || 0);
   const projectWeight     = Number(data?.ProjectWeight || 0);
+  const prevProjectWeight = Number(data?.PrevProjectWeight || 0);
   const exportWeight      = Number(data?.ExportWeight || 0);
+  const prevExportWeight   = Number(data?.PrevExportWeight || 0);
 
   const localWeightTotal  = whiteWeight + colorCenterWeight + projectWeight;
   const localWeight       = Math.max(0, totalWeight - exportWeight);
   const otherWeight       = Math.max(0, localWeight - localWeightTotal);
+
+  const prevLocalWeightTotal = prevWhiteWeight + prevColorCenterWeight + prevProjectWeight;
+  const prevLocalWeight      = Math.max(0, prevTotalWeight - prevExportWeight);
+  const prevOtherWeight      = Math.max(0, prevLocalWeight - prevLocalWeightTotal);
+
+  // YTD weights (current vs previous year)
+  const ytdWhiteWeight2026 = Number(data?.YTDWhiteWeight2026 || 0);
+  const ytdWhiteWeight2025 = Number(data?.YTDWhiteWeight2025 || 0);
+  const ytdColorCenterWeight2026 = Number(data?.YTDColorCenterWeight2026 || 0);
+  const ytdColorCenterWeight2025 = Number(data?.YTDColorCenterWeight2025 || 0);
+  const ytdProjectWeight2026 = Number(data?.YTDProjectWeight2026 || 0);
+  const ytdProjectWeight2025 = Number(data?.YTDProjectWeight2025 || 0);
+  const ytdExportWeight2026 = Number(data?.YTDExportWeight2026 || 0);
+  const ytdExportWeight2025 = Number(data?.YTDExportWeight2025 || 0);
+
+  const ytdLocalWeightTotal2026 = ytdWhiteWeight2026 + ytdColorCenterWeight2026 + ytdProjectWeight2026;
+  const ytdLocalWeight2026      = Math.max(0, ytdWeight2026 - ytdExportWeight2026);
+  const ytdOtherWeight2026       = Math.max(0, ytdLocalWeight2026 - ytdLocalWeightTotal2026);
+
+  const ytdLocalWeightTotal2025 = ytdWhiteWeight2025 + ytdColorCenterWeight2025 + ytdProjectWeight2025;
+  const ytdLocalWeight2025      = Math.max(0, ytdWeight2025 - ytdExportWeight2025);
+  const ytdOtherWeight2025       = Math.max(0, ytdLocalWeight2025 - ytdLocalWeightTotal2025);
+
+  const comparisonRows = comparisonMode === 'period' ? [
+    { icon: '👥', label: 'White Customers', p: prevWhiteWeight,       c: whiteWeight },
+    { icon: '🎨', label: 'Color Centers',   p: prevColorCenterWeight, c: colorCenterWeight },
+    { icon: '🏗️', label: 'Projects',        p: prevProjectWeight,     c: projectWeight },
+    { icon: '🌍', label: 'Export',          p: prevExportWeight,      c: exportWeight },
+    { icon: '📦', label: 'Other',           p: prevOtherWeight,       c: otherWeight },
+    { icon: '⚖️', label: 'Total Weight',    p: prevTotalWeight,       c: totalWeight, bold: true },
+  ] : [
+    { icon: '👥', label: 'White Customers', p: ytdWhiteWeight2025,       c: ytdWhiteWeight2026 },
+    { icon: '🎨', label: 'Color Centers',   p: ytdColorCenterWeight2025, c: ytdColorCenterWeight2026 },
+    { icon: '🏗️', label: 'Projects',        p: ytdProjectWeight2025,     c: ytdProjectWeight2026 },
+    { icon: '🌍', label: 'Export',          p: ytdExportWeight2025,      c: ytdExportWeight2026 },
+    { icon: '📦', label: 'Other',           p: ytdOtherWeight2025,       c: ytdOtherWeight2026 },
+    { icon: '📈', label: 'Total YTD Weight',p: ytdWeight2025,            c: ytdWeight2026, bold: true },
+  ];
 
   return (
     <div>
@@ -358,19 +403,25 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
         <div style={card}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
             <span style={{fontSize:15, fontWeight:700}}>Weight YoY Comparison</span>
-            <span style={{fontSize:12, color:'var(--muted)'}}>Period vs YTD</span>
+            <div style={{display:'flex', border:'0.5px solid var(--border2)', borderRadius:'var(--radius-xs)', overflow:'hidden'}}>
+              {['period','ytd'].map(m => (
+                <button key={m} onClick={() => setComparisonMode(m)} style={{
+                  padding:'3px 8px', fontSize:11, border:'none', cursor:'pointer', fontFamily:'var(--font)',
+                  background: comparisonMode===m?'var(--orange)':'var(--surface)',
+                  color: comparisonMode===m?'#fff':'var(--muted)', fontWeight: comparisonMode===m?600:400,
+                  textTransform:'uppercase'
+                }}>{m}</button>
+              ))}
+            </div>
           </div>
           {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
             <div style={{display:'grid', gridTemplateColumns:'1fr 90px 90px 72px', gap:6, padding:'6px 0', borderBottom:'1px solid var(--border)'}}>
-              {['Period',String(year-1),String(year),'Growth'].map((h,i)=>(
+              {['Customer Type', comparisonMode === 'period' ? String(year-1) : 'YTD ' + (year-1), comparisonMode === 'period' ? String(year) : 'YTD ' + year, 'Growth'].map((h,i)=>(
                 <span key={i} style={{fontSize:10, fontWeight:700, color:'var(--muted)', textTransform:'uppercase', textAlign:i>0?'right':'left'}}>{h}</span>
               ))}
             </div>
-            {[
-              {icon:'⚖️', label:period === 'yearly' ? 'Yearly' : period === 'quarterly' ? 'Quarterly' : 'Monthly', p:prevTotalWeight, c:totalWeight},
-              {icon:'📈', label:'YTD Weight', p:ytdWeight2025, c:ytdWeight2026, bold:true},
-            ].map((r,i) => (
-              <div key={i} style={{display:'grid', gridTemplateColumns:'1fr 90px 90px 72px', gap:6, padding:'10px 0', borderBottom:i<1?'1px solid var(--border)':'none', alignItems:'center'}}>
+            {comparisonRows.map((r,i) => (
+              <div key={i} style={{display:'grid', gridTemplateColumns:'1fr 90px 90px 72px', gap:6, padding:'10px 0', borderBottom:i<5?'1px solid var(--border)':'none', alignItems:'center'}}>
                 <span style={{fontSize:13, fontWeight:r.bold?700:500}}>{r.icon} {r.label}</span>
                 <span style={{fontSize:13, textAlign:'right', color:'var(--muted)', fontWeight:r.bold?700:400}}>{fmtWeight(r.p)}</span>
                 <span style={{fontSize:13, textAlign:'right', fontWeight:700}}>{fmtWeight(r.c)}</span>
