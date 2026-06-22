@@ -934,7 +934,9 @@ begin
             sum(case when x.YTDYear = @Year then x.TotalAmount else 0 end) as AmountYTD2026,
             sum(case when x.YTDYear = (@Year - 1) then x.TotalAmount else 0 end) as AmountYTD2025,
             sum(case when x.YTDYear = @Year then x.TotalWeight else 0 end) as WeightYTD2026,
-            sum(case when x.YTDYear = (@Year - 1) then x.TotalWeight else 0 end) as WeightYTD2025
+            sum(case when x.YTDYear = (@Year - 1) then x.TotalWeight else 0 end) as WeightYTD2025,
+            sum(case when x.YTDYear = @Year then x.TotalVolume else 0 end) as VolumeYTD2026,
+            sum(case when x.YTDYear = (@Year - 1) then x.TotalVolume else 0 end) as VolumeYTD2025
         from Control.CustomerYTDSummary x
         left outer join acr.CustomerMaster b on x.CustomerNo = b.CustomerNo
         where (x.YTDYear = @Year or x.YTDYear = (@Year - 1))

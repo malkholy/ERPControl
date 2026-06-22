@@ -529,58 +529,65 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
               <div style={{color:'var(--red)', padding:16, textAlign:'center'}}>⚠ {drawerError}</div>
             ) : drawerData.length === 0 ? (
               <div style={{color:'var(--muted)', padding:32, textAlign:'center'}}>No customers found for this period.</div>
-            ) : (
-              <div style={{flex:1, overflowY:'auto'}}>
-                <table style={{width:'100%', borderCollapse:'collapse'}}>
-                  <thead>
-                    <tr>
-                      <th rowSpan={2} style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', verticalAlign:'middle'}}>Customer</th>
-                      <th colSpan={3} style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>YTD Sales Amount (EGP)</th>
-                      <th colSpan={3} style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>YTD Weight</th>
-                    </tr>
-                    <tr>
-                      <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>{year}</th>
-                      <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>{year - 1}</th>
-                      <th style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>% Growth</th>
-                      <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{year}</th>
-                      <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{year - 1}</th>
-                      <th style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>% Growth</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {drawerData.map((cust, i) => (
-                      <tr key={cust.CustomerNumber} style={{
-                        borderBottom:'1px solid var(--border2)',
-                        background: i % 2 === 0 ? 'var(--soft)' : 'transparent'
-                      }}>
-                        <td style={{padding:'10px 12px', fontSize:13}}>
-                          <div style={{fontWeight:600}}>{cust.CustomerName}</div>
-                          <div style={{fontSize:11, color:'var(--muted)'}}>{cust.CustomerNumber}</div>
-                        </td>
-                        <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, fontWeight:600}}>
-                          {fmt(cust.AmountYTD2026)}
-                        </td>
-                        <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, color:'var(--muted)'}}>
-                          {fmt(cust.AmountYTD2025)}
-                        </td>
-                        <td style={{padding:'10px 12px', textAlign:'center', fontSize:12}}>
-                          <GrowthBadge prev={cust.AmountYTD2025} curr={cust.AmountYTD2026} />
-                        </td>
-                        <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, fontWeight:600}}>
-                          {fmtWeight(cust.WeightYTD2026)}
-                        </td>
-                        <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, color:'var(--muted)'}}>
-                          {fmtWeight(cust.WeightYTD2025)}
-                        </td>
-                        <td style={{padding:'10px 12px', textAlign:'center', fontSize:12}}>
-                          <GrowthBadge prev={cust.WeightYTD2025} curr={cust.WeightYTD2026} />
-                        </td>
+            ) : (() => {
+              const isColorCenter = drawerType === 'Color Centers';
+              return (
+                <div style={{flex:1, overflowY:'auto'}}>
+                  <table style={{width:'100%', borderCollapse:'collapse'}}>
+                    <thead>
+                      <tr>
+                        <th rowSpan={2} style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', verticalAlign:'middle'}}>Customer</th>
+                        <th colSpan={3} style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>YTD Sales Amount (EGP)</th>
+                        <th colSpan={3} style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{isColorCenter ? 'YTD Volume' : 'YTD Weight'}</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                      <tr>
+                        <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>{year}</th>
+                        <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>{year - 1}</th>
+                        <th style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>% Growth</th>
+                        <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{year}</th>
+                        <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{year - 1}</th>
+                        <th style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>% Growth</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {drawerData.map((cust, i) => (
+                        <tr key={cust.CustomerNumber} style={{
+                          borderBottom:'1px solid var(--border2)',
+                          background: i % 2 === 0 ? 'var(--soft)' : 'transparent'
+                        }}>
+                          <td style={{padding:'10px 12px', fontSize:13}}>
+                            <div style={{fontWeight:600}}>{cust.CustomerName}</div>
+                            <div style={{fontSize:11, color:'var(--muted)'}}>{cust.CustomerNumber}</div>
+                          </td>
+                          <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, fontWeight:600}}>
+                            {fmt(cust.AmountYTD2026)}
+                          </td>
+                          <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, color:'var(--muted)'}}>
+                            {fmt(cust.AmountYTD2025)}
+                          </td>
+                          <td style={{padding:'10px 12px', textAlign:'center', fontSize:12}}>
+                            <GrowthBadge prev={cust.AmountYTD2025} curr={cust.AmountYTD2026} />
+                          </td>
+                          <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, fontWeight:600}}>
+                            {isColorCenter ? fmtVolume(cust.VolumeYTD2026) : fmtWeight(cust.WeightYTD2026)}
+                          </td>
+                          <td style={{padding:'10px 12px', textAlign:'right', fontSize:13, color:'var(--muted)'}}>
+                            {isColorCenter ? fmtVolume(cust.VolumeYTD2025) : fmtWeight(cust.WeightYTD2025)}
+                          </td>
+                          <td style={{padding:'10px 12px', textAlign:'center', fontSize:12}}>
+                            {isColorCenter ? (
+                              <GrowthBadge prev={cust.VolumeYTD2025} curr={cust.VolumeYTD2026} />
+                            ) : (
+                              <GrowthBadge prev={cust.WeightYTD2025} curr={cust.WeightYTD2026} />
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
