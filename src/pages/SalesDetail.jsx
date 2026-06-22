@@ -381,25 +381,9 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
         ))}
       </div>
 
-      {/* 2 Weight Panels */}
-      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:24}}>
-        {/* Card 1: Weight Breakdown by Customer Type */}
-        <div style={card}>
-          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
-            <span style={{fontSize:15, fontWeight:700}}>Weight Breakdown by Customer Type</span>
-            <span style={{fontSize:12, color:'var(--muted)'}}>{periodLabel}</span>
-          </div>
-          {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
-            <BRow icon="👥" label="White Customers" amount={fmtWeight(whiteWeight)}       pctVal={pct(whiteWeight,totalWeight)}       color="var(--green)" />
-            <BRow icon="🎨" label="Color Centers"   amount={fmtWeight(colorCenterWeight)} pctVal={pct(colorCenterWeight,totalWeight)} color="var(--amber)" />
-            <BRow icon="🏗️" label="Projects"        amount={fmtWeight(projectWeight)}     pctVal={pct(projectWeight,totalWeight)}     color="#7c3aed" />
-            <BRow icon="🌍" label="Export"          amount={fmtWeight(exportWeight)}      pctVal={pct(exportWeight,totalWeight)}      color="var(--blue)" />
-            <BRow icon="📦" label="Other"           amount={fmtWeight(otherWeight)}       pctVal={pct(otherWeight,totalWeight)}       color="var(--muted)" />
-            <BRow label="Total Weight" amount={fmtWeight(totalWeight)} pctVal="100%" bold color="var(--text)" />
-          </>}
-        </div>
-
-        {/* Card 2: Weight YoY Comparison */}
+      {/* Weight YoY Comparison Panel */}
+      <div style={{marginBottom:24}}>
+        {/* Card: Weight YoY Comparison */}
         <div style={card}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
             <span style={{fontSize:15, fontWeight:700}}>Weight YoY Comparison</span>
