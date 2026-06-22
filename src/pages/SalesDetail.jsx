@@ -48,11 +48,11 @@ function growth(a, b) {
   return ((Number(b) - Number(a)) / Number(a)) * 100;
 }
 
-function GrowthBadge({ prev, curr }) {
+function GrowthBadge({ prev, curr, style }) {
   const g = growth(prev, curr);
-  if (g === null) return <span style={{color:'var(--muted)'}}>—</span>;
+  if (g === null) return <span style={{color:'var(--muted)', ...style}}>—</span>;
   const up = g >= 0;
-  return <span style={{color: up?'var(--green)':'var(--red)', fontWeight:600, fontSize:13}}>{up?'▲':'▼'} {up?'+':''}{g.toFixed(1)}%</span>;
+  return <span style={{color: up?'var(--green)':'var(--red)', fontWeight:600, fontSize:13, ...style}}>{up?'▲':'▼'} {up?'+':''}{g.toFixed(1)}%</span>;
 }
 
 function MultiSelect({ options, selected, onChange, placeholder }) {
@@ -547,35 +547,35 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                   {/* KPI Cards */}
                   <div style={{display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:16, marginBottom:20}}>
                     <div style={{
-                      background:'var(--soft)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:'14px 16px', display:'flex', flexDirection:'column', gap:4
+                      background:'var(--soft)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:'14px 16px', display:'flex', flexDirection:'column', gap:2
                     }}>
                       <div style={{fontSize:10, color:'var(--muted)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.03em'}}>Top 25 YTD Sales</div>
-                      <div style={{fontSize:18, fontWeight:800, color:'var(--text)'}}>{fmt(totalAmt2026)}</div>
-                      <div style={{fontSize:11, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
-                        <span style={{color:'var(--muted)'}}>vs {fmt(totalAmt2025)}</span>
-                        <GrowthBadge prev={totalAmt2025} curr={totalAmt2026} />
+                      <div style={{display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap', marginTop:2}}>
+                        <span style={{fontSize:18, fontWeight:800, color:'var(--text)'}}>{fmt(totalAmt2026)}</span>
+                        <span style={{fontSize:18, color:'var(--muted)', fontWeight:500}}>vs {fmt(totalAmt2025)}</span>
+                        <GrowthBadge prev={totalAmt2025} curr={totalAmt2026} style={{fontSize:18}} />
                       </div>
                     </div>
 
                     <div style={{
-                      background:'var(--soft)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:'14px 16px', display:'flex', flexDirection:'column', gap:4
+                      background:'var(--soft)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:'14px 16px', display:'flex', flexDirection:'column', gap:2
                     }}>
                       <div style={{fontSize:10, color:'var(--muted)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.03em'}}>{isColorCenter ? 'Top 25 YTD Volume' : 'Top 25 YTD Weight'}</div>
-                      <div style={{fontSize:18, fontWeight:800, color:'var(--text)'}}>{isColorCenter ? fmtVolume(totalQty2026) : fmtWeight(totalQty2026)}</div>
-                      <div style={{fontSize:11, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
-                        <span style={{color:'var(--muted)'}}>vs {isColorCenter ? fmtVolume(totalQty2025) : fmtWeight(totalQty2025)}</span>
-                        <GrowthBadge prev={totalQty2025} curr={totalQty2026} />
+                      <div style={{display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap', marginTop:2}}>
+                        <span style={{fontSize:18, fontWeight:800, color:'var(--text)'}}>{isColorCenter ? fmtVolume(totalQty2026) : fmtWeight(totalQty2026)}</span>
+                        <span style={{fontSize:18, color:'var(--muted)', fontWeight:500}}>vs {isColorCenter ? fmtVolume(totalQty2025) : fmtWeight(totalQty2025)}</span>
+                        <GrowthBadge prev={totalQty2025} curr={totalQty2026} style={{fontSize:18}} />
                       </div>
                     </div>
 
                     <div style={{
-                      background:'var(--soft)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:'14px 16px', display:'flex', flexDirection:'column', gap:4
+                      background:'var(--soft)', border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:'14px 16px', display:'flex', flexDirection:'column', gap:2
                     }}>
                       <div style={{fontSize:10, color:'var(--muted)', fontWeight:700, textTransform:'uppercase', letterSpacing:'.03em'}}>Average YTD Sales</div>
-                      <div style={{fontSize:18, fontWeight:800, color:'var(--text)'}}>{fmt(avgAmt2026)}</div>
-                      <div style={{fontSize:11, display:'flex', alignItems:'center', gap:6, flexWrap:'wrap'}}>
-                        <span style={{color:'var(--muted)'}}>vs {fmt(avgAmt2025)}</span>
-                        <GrowthBadge prev={avgAmt2025} curr={avgAmt2026} />
+                      <div style={{display:'flex', alignItems:'baseline', gap:8, flexWrap:'wrap', marginTop:2}}>
+                        <span style={{fontSize:18, fontWeight:800, color:'var(--text)'}}>{fmt(avgAmt2026)}</span>
+                        <span style={{fontSize:18, color:'var(--muted)', fontWeight:500}}>vs {fmt(avgAmt2025)}</span>
+                        <GrowthBadge prev={avgAmt2025} curr={avgAmt2026} style={{fontSize:18}} />
                       </div>
                     </div>
                   </div>
