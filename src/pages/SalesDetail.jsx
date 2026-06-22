@@ -585,17 +585,44 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
                     <table style={{width:'100%', borderCollapse:'collapse'}}>
                       <thead>
                         <tr>
-                          <th rowSpan={2} style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', verticalAlign:'middle'}}>Customer</th>
-                          <th colSpan={3} style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>YTD Sales Amount (EGP)</th>
-                          <th colSpan={3} style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{isColorCenter ? 'YTD Volume' : 'YTD Weight'}</th>
+                          <th rowSpan={2} style={{
+                            position: 'sticky', top: 0, zIndex: 3, background: 'var(--surface)',
+                            padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)', verticalAlign:'middle'
+                          }}>Customer</th>
+                          <th colSpan={3} style={{
+                            position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)',
+                            padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'
+                          }}>YTD Sales Amount (EGP)</th>
+                          <th colSpan={3} style={{
+                            position: 'sticky', top: 0, zIndex: 2, background: 'var(--surface)',
+                            padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:11, color:'var(--muted)'
+                          }}>{isColorCenter ? 'YTD Volume' : 'YTD Weight'}</th>
                         </tr>
                         <tr>
-                          <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>{year}</th>
-                          <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>{year - 1}</th>
-                          <th style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.02)'}}>% Growth</th>
-                          <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{year}</th>
-                          <th style={{padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>{year - 1}</th>
-                          <th style={{padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)', background:'rgba(255,255,255,0.04)'}}>% Growth</th>
+                          <th style={{
+                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
+                          }}>{year}</th>
+                          <th style={{
+                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
+                          }}>{year - 1}</th>
+                          <th style={{
+                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
+                          }}>% Growth</th>
+                          <th style={{
+                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
+                          }}>{year}</th>
+                          <th style={{
+                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            padding:'6px 12px', textAlign:'right', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
+                          }}>{year - 1}</th>
+                          <th style={{
+                            position: 'sticky', top: '29px', zIndex: 2, background: 'var(--surface)',
+                            padding:'6px 12px', textAlign:'center', borderBottom:'1px solid var(--border)', fontSize:10, color:'var(--muted)'
+                          }}>% Growth</th>
                         </tr>
                       </thead>
                       <tbody>
