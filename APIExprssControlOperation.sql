@@ -18,8 +18,9 @@ CREATE OR ALTER procedure [dbo].[APIExprssControlOperation]
     @AppVersionDesktop nvarchar(50) = '',
     @PlatForm       nvarchar(50)  = '',
     @SqlStatement   nvarchar(max) = '',
-    @State          int = 0 output,
-    @Message        nvarchar(500) = '' output
+    @State          int            output,
+    @Message        nvarchar(500)  output
+WITH EXECUTE AS OWNER
 as
 begin
     set nocount on;
@@ -283,7 +284,7 @@ begin
         )
         select top(25)
             cl.ClientID,
-            isnull(m.Name, isnull(m.ClientName, 'Client #' + cast(cl.ClientID as nvarchar))) as ClientName,
+            isnull(m.Name, 'Client #' + cast(cl.ClientID as nvarchar)) as ClientName,
             isnull(chg.TotalChargedPoints, 0) as TotalChargedPoints,
             isnull(chg.TotalChargedCards, 0) as TotalChargedCards,
             isnull(red.TotalRedeemedPoints, 0) as TotalRedeemedPoints,
