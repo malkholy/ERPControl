@@ -1,0 +1,353 @@
+USE [Express]
+GO
+/****** Object:  StoredProcedure [dbo].[APIExprssControlOperation] ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER procedure [dbo].[APIExprssControlOperation]
+    @Operation      nvarchar(100) = '',
+    @LineData       nvarchar(max) = '',
+    @Year           int = 0,
+    @Month          int = 0, 
+    @User           nvarchar(100) = '',
+    @FireBaseToken  nvarchar(500) = '',
+    @AppVersionWeb  nvarchar(50)  = '',
+    @AppVersionAndroid nvarchar(50) = '',
+    @AppVersionIos  nvarchar(50)  = '',
+    @AppVersionDesktop nvarchar(50) = '',
+    @PlatForm       nvarchar(50)  = '',
+    @SqlStatement   nvarchar(max) = '',
+    @State          int = 0 output,
+    @Message        nvarchar(500) = '' output
+as
+begin
+    set nocount on;
+    set @State = 0;
+    set @Message = '';
+
+    -- Parse standard parameters from @LineData if provided
+    declare @Period nvarchar(20), @Months nvarchar(100), @QuarterNo int
+    declare @SelectedYear int
+
+    if @LineData is not null and @LineData <> '' and isjson(@LineData) > 0
+    begin
+        select 
+            @Period      = Period,
+            @Months      = Months,
+            @QuarterNo   = Quarter,
+            @SelectedYear = Year
+        from openjson(@LineData) with (
+            Period   nvarchar(20)  '$.Period',
+            Months   nvarchar(100) '$.Months',
+            Quarter  int           '$.Quarter',
+            Year     int           '$.Year'
+        )
+    end
+
+    -- Fallbacks
+    if @SelectedYear is null or @SelectedYear = 0
+        set @SelectedYear = @Year;
+    if @SelectedYear = 0
+        set @SelectedYear = year(getdate());
+
+    if @Period is null
+        set @Period = 'monthly';
+
+    if @Months is null and @Month <> 0
+        set @Months = cast(@Month as nvarchar);
+    if @Months is null
+        set @Months = cast(month(getdate()) as nvarchar);
+
+    -- Expand quarters
+    if @Period = 'quarterly' and @QuarterNo is not null
+    begin
+        set @Months = case @QuarterNo
+            when 1 then '1,2,3'
+            when 2 then '4,5,6'
+            when 3 then '7,8,9'
+            when 4 then '10,11,12'
+            else @Months
+        end
+    end
+
+    -- Populate temporary table of months for filtering
+    declare @MonthTable table (MonthVal int)
+    if @Period <> 'yearly' and @Months is not null and @Months <> ''
+    begin
+        insert into @MonthTable
+        select cast(value as int) from string_split(@Months, ',')
+    end
+
+    -- =========================================================================
+    -- 1. Get Control Data By Period (For parent page summary cards)
+    -- =========================================================================
+    if @Operation = 'Get Control Data By Period'
+    begin
+        declare @TotalChargingCards int = 0
+        declare @TotalChargingPoints dec(18,2) = 0
+        declare @TotalActiveCards int = 0
+        declare @TotalActivePoints dec(18,2) = 0
+
+        select 
+            @TotalChargingCards = isnull(sum(TotalCards), 0),
+            @TotalChargingPoints = isnull(sum(TotalPoints), 0)
+        from [Express].[Stas].[PointChargingHistory]
+        where ChargingYear = @SelectedYear
+          and (@Period = 'yearly' or ChargingMonth in (select MonthVal from @MonthTable))
+
+        select 
+            @TotalActiveCards = isnull(sum(TotalCards), 0),
+            @TotalActivePoints = isnull(sum(TotalPoints), 0)
+        from [Express].[Stas].[PointActivationHistory]
+        where ActivationYear = @SelectedYear
+          and (@Period = 'yearly' or ActivationMonth in (select MonthVal from @MonthTable))
+
+        select 
+            @TotalChargingCards as TotalChargingCards,
+            @TotalChargingPoints as TotalChargingPoints,
+            @TotalActiveCards as TotalActiveCards,
+            @TotalActivePoints as TotalActivePoints
+
+        return
+    end
+
+    -- =========================================================================
+    -- 2. Get Express Details By Period (Full dashboard content)
+    -- =========================================================================
+    if @Operation = 'Get Express Details By Period'
+    begin
+        -- Current Year
+        declare @CY_ChargingCards int = 0, @CY_ChargingPoints dec(18,2) = 0
+        declare @CY_ActiveCards int = 0, @CY_ActivePoints dec(18,2) = 0
+        declare @CY_RedeemRequests int = 0, @CY_RedeemPoints dec(18,2) = 0, @CY_RedeemAmount dec(18,2) = 0
+
+        -- Prior Year
+        declare @PY_ChargingCards int = 0, @PY_ChargingPoints dec(18,2) = 0
+        declare @PY_ActiveCards int = 0, @PY_ActivePoints dec(18,2) = 0
+        declare @PY_RedeemRequests int = 0, @PY_RedeemPoints dec(18,2) = 0, @PY_RedeemAmount dec(18,2) = 0
+
+        -- Query CY Charging
+        select 
+            @CY_ChargingCards = isnull(sum(TotalCards), 0),
+            @CY_ChargingPoints = isnull(sum(TotalPoints), 0)
+        from [Express].[Stas].[PointChargingHistory]
+        where ChargingYear = @SelectedYear
+          and (@Period = 'yearly' or ChargingMonth in (select MonthVal from @MonthTable))
+
+        -- Query PY Charging
+        select 
+            @PY_ChargingCards = isnull(sum(TotalCards), 0),
+            @PY_ChargingPoints = isnull(sum(TotalPoints), 0)
+        from [Express].[Stas].[PointChargingHistory]
+        where ChargingYear = @SelectedYear - 1
+          and (@Period = 'yearly' or ChargingMonth in (select MonthVal from @MonthTable))
+
+        -- Query CY Activation
+        select 
+            @CY_ActiveCards = isnull(sum(TotalCards), 0),
+            @CY_ActivePoints = isnull(sum(TotalPoints), 0)
+        from [Express].[Stas].[PointActivationHistory]
+        where ActivationYear = @SelectedYear
+          and (@Period = 'yearly' or ActivationMonth in (select MonthVal from @MonthTable))
+
+        -- Query PY Activation
+        select 
+            @PY_ActiveCards = isnull(sum(TotalCards), 0),
+            @PY_ActivePoints = isnull(sum(TotalPoints), 0)
+        from [Express].[Stas].[PointActivationHistory]
+        where ActivationYear = @SelectedYear - 1
+          and (@Period = 'yearly' or ActivationMonth in (select MonthVal from @MonthTable))
+
+        -- Query CY Redemptions
+        select 
+            @CY_RedeemRequests = isnull(sum(TotalRequest), 0),
+            @CY_RedeemPoints = isnull(sum(TotalPoint), 0),
+            @CY_RedeemAmount = isnull(sum(GiftAmount), 0)
+        from [Express].[Stas].[PointRedemptionHistory]
+        where RedemptionYear = @SelectedYear
+          and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
+
+        -- Query PY Redemptions
+        select 
+            @PY_RedeemRequests = isnull(sum(TotalRequest), 0),
+            @PY_RedeemPoints = isnull(sum(TotalPoint), 0),
+            @PY_RedeemAmount = isnull(sum(GiftAmount), 0)
+        from [Express].[Stas].[PointRedemptionHistory]
+        where RedemptionYear = @SelectedYear - 1
+          and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
+
+        -- List0: Summary totals (CY vs PY)
+        select 
+            @CY_ChargingCards as CY_ChargingCards,
+            @CY_ChargingPoints as CY_ChargingPoints,
+            @CY_ActiveCards as CY_ActiveCards,
+            @CY_ActivePoints as CY_ActivePoints,
+            @CY_RedeemRequests as CY_RedeemRequests,
+            @CY_RedeemPoints as CY_RedeemPoints,
+            @CY_RedeemAmount as CY_RedeemAmount,
+            @PY_ChargingCards as PY_ChargingCards,
+            @PY_ChargingPoints as PY_ChargingPoints,
+            @PY_ActiveCards as PY_ActiveCards,
+            @PY_ActivePoints as PY_ActivePoints,
+            @PY_RedeemRequests as PY_RedeemRequests,
+            @PY_RedeemPoints as PY_RedeemPoints,
+            @PY_RedeemAmount as PY_RedeemAmount
+
+        -- List1: Monthly YoY compare trend
+        select 
+            m.MonthVal as [Month],
+            isnull(c.CY_ChargingCards, 0) as CY_ChargingCards,
+            isnull(c.CY_ChargingPoints, 0) as CY_ChargingPoints,
+            isnull(p.PY_ChargingCards, 0) as PY_ChargingCards,
+            isnull(p.PY_ChargingPoints, 0) as PY_ChargingPoints,
+            isnull(a.CY_ActiveCards, 0) as CY_ActiveCards,
+            isnull(a.CY_ActivePoints, 0) as CY_ActivePoints,
+            isnull(ap.PY_ActiveCards, 0) as PY_ActiveCards,
+            isnull(ap.PY_ActivePoints, 0) as PY_ActivePoints
+        from (
+            select 1 as MonthVal union all select 2 union all select 3 union all select 4 union all 
+            select 5 union all select 6 union all select 7 union all select 8 union all 
+            select 9 union all select 10 union all select 11 union all select 12
+        ) m
+        left join (
+            select ChargingMonth, sum(TotalCards) as CY_ChargingCards, sum(TotalPoints) as CY_ChargingPoints
+            from [Express].[Stas].[PointChargingHistory]
+            where ChargingYear = @SelectedYear
+            group by ChargingMonth
+        ) c on m.MonthVal = c.ChargingMonth
+        left join (
+            select ChargingMonth, sum(TotalCards) as PY_ChargingCards, sum(TotalPoints) as PY_ChargingPoints
+            from [Express].[Stas].[PointChargingHistory]
+            where ChargingYear = @SelectedYear - 1
+            group by ChargingMonth
+        ) p on m.MonthVal = p.ChargingMonth
+        left join (
+            select ActivationMonth, sum(TotalCards) as CY_ActiveCards, sum(TotalPoints) as CY_ActivePoints
+            from [Express].[Stas].[PointActivationHistory]
+            where ActivationYear = @SelectedYear
+            group by ActivationMonth
+        ) a on m.MonthVal = a.ActivationMonth
+        left join (
+            select ActivationMonth, sum(TotalCards) as PY_ActiveCards, sum(TotalPoints) as PY_ActivePoints
+            from [Express].[Stas].[PointActivationHistory]
+            where ActivationYear = @SelectedYear - 1
+            group by ActivationMonth
+        ) ap on m.MonthVal = ap.ActivationMonth
+        where (@Period = 'yearly' or m.MonthVal in (select MonthVal from @MonthTable))
+        order by m.MonthVal
+
+        -- List2: Gift Redemption Leaderboard
+        select top(25)
+            GiftID,
+            GiftName,
+            sum(GiftAmount) as TotalGiftAmount,
+            sum(TotalRequest) as TotalRequests,
+            sum(TotalPoint) as TotalPoints
+        from [Express].[Stas].[PointRedemptionHistory]
+        where RedemptionYear = @SelectedYear
+          and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
+        group by GiftID, GiftName
+        order by sum(TotalPoint) desc
+
+        -- List3: Card Type Breakdown
+        select 
+            isnull(c.CardType, a.CardType) as CardType,
+            isnull(c.TotalCardsCharged, 0) as TotalCardsCharged,
+            isnull(c.TotalPointsCharged, 0) as TotalPointsCharged,
+            isnull(a.TotalCardsActivated, 0) as TotalCardsActivated,
+            isnull(a.TotalPointsActivated, 0) as TotalPointsActivated
+        from (
+            select CardType, sum(TotalCards) as TotalCardsCharged, sum(TotalPoints) as TotalPointsCharged
+            from [Express].[Stas].[PointChargingHistory]
+            where ChargingYear = @SelectedYear
+              and (@Period = 'yearly' or ChargingMonth in (select MonthVal from @MonthTable))
+            group by CardType
+        ) c
+        full outer join (
+            select CardType, sum(TotalCards) as TotalCardsActivated, sum(TotalPoints) as TotalPointsActivated
+            from [Express].[Stas].[PointActivationHistory]
+            where ActivationYear = @SelectedYear
+              and (@Period = 'yearly' or ActivationMonth in (select MonthVal from @MonthTable))
+            group by CardType
+        ) a on c.CardType = a.CardType
+        order by isnull(c.TotalPointsCharged, 0) desc
+
+        -- List4: Top Clients Leaderboard (Combining Charging and Redemption)
+        ;with ClientList as (
+            select ClientID from [Express].[Stas].[PointChargingHistory]
+            where ChargingYear = @SelectedYear and (@Period = 'yearly' or ChargingMonth in (select MonthVal from @MonthTable))
+            union
+            select ClientID from [Express].[Stas].[PointRedemptionHistory]
+            where RedemptionYear = @SelectedYear and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
+        )
+        select top(25)
+            cl.ClientID,
+            isnull(m.Name, isnull(m.ClientName, 'Client #' + cast(cl.ClientID as nvarchar))) as ClientName,
+            isnull(chg.TotalChargedPoints, 0) as TotalChargedPoints,
+            isnull(chg.TotalChargedCards, 0) as TotalChargedCards,
+            isnull(red.TotalRedeemedPoints, 0) as TotalRedeemedPoints,
+            isnull(red.TotalRedeemRequests, 0) as TotalRedeemRequests
+        from ClientList cl
+        left join [Express].[Stas].[ClientMaster] m on m.GLCID = cl.ClientID
+        left join (
+            select ClientID, sum(TotalPoints) as TotalChargedPoints, sum(TotalCards) as TotalChargedCards
+            from [Express].[Stas].[PointChargingHistory]
+            where ChargingYear = @SelectedYear
+              and (@Period = 'yearly' or ChargingMonth in (select MonthVal from @MonthTable))
+            group by ClientID
+        ) chg on cl.ClientID = chg.ClientID
+        left join (
+            select ClientID, sum(TotalPoint) as TotalRedeemedPoints, sum(TotalRequest) as TotalRedeemRequests
+            from [Express].[Stas].[PointRedemptionHistory]
+            where RedemptionYear = @SelectedYear
+              and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
+            group by ClientID
+        ) red on cl.ClientID = red.ClientID
+        order by isnull(chg.TotalChargedPoints, 0) desc
+
+        return
+    end
+
+    -- =========================================================================
+    -- 3. Get Express Client Detail (For slide-out drawer)
+    -- =========================================================================
+    if @Operation = 'Get Express Client Detail'
+    begin
+        declare @ClientID int
+
+        if @LineData is not null and @LineData <> '' and isjson(@LineData) > 0
+        begin
+            select @ClientID = ClientID
+            from openjson(@LineData) with (
+                ClientID int '$.ClientID'
+            )
+        end
+
+        -- List0: Client Charging History
+        select 
+            ChargingYear,
+            ChargingMonth,
+            CardType,
+            TotalCards,
+            TotalPoints
+        from [Express].[Stas].[PointChargingHistory]
+        where ClientID = @ClientID
+        order by ChargingYear desc, ChargingMonth desc
+
+        -- List1: Client Redemption History
+        select 
+            RedemptionYear,
+            RedemptionMonth,
+            GiftName,
+            GiftAmount,
+            TotalRequest,
+            TotalPoint
+        from [Express].[Stas].[PointRedemptionHistory]
+        where ClientID = @ClientID
+        order by RedemptionYear desc, RedemptionMonth desc
+
+        return
+    end
+end
+GO

@@ -35,6 +35,12 @@ const NAV = [
     label: 'Raw & Packing',
     desc: 'Raw materials and packaging inventory balances',
   },
+  {
+    id: 'express',
+    icon: '💳',
+    label: 'Express',
+    desc: 'Card charging, activation, and gift redemption analytics',
+  },
 ];
 
 export default NAV;

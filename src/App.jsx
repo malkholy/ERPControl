@@ -7,6 +7,7 @@ import Projects from './pages/Projects.jsx';
 import HR from './pages/HR.jsx';
 import Cash from './pages/Cash.jsx';
 import RawPacking from './pages/RawPacking.jsx';
+import ExpressDetail from './pages/ExpressDetail.jsx';
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -143,6 +144,7 @@ const PAGE_COMPONENTS = {
   hr: HR,
   cash: Cash,
   rawpacking: RawPacking,
+  express: ExpressDetail,
 };
 
 // ─── App ─────────────────────────────────────────────────────────────────────

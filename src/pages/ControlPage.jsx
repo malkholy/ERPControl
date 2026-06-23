@@ -4,6 +4,7 @@ import SalesDetail from './SalesDetail.jsx';
 import PurchasingDetail from './PurchasingDetail.jsx';
 import ExpensesDetail from './ExpensesDetail.jsx';
 import CashDetail from './CashDetail.jsx';
+import ExpressDetail from './ExpressDetail.jsx';
 
 const MONTHS = [
   { value: 1, label: 'January' }, { value: 2, label: 'February' },
@@ -182,6 +183,9 @@ export default function ControlPage({ user }) {
   );
   if (view === 'purchasing') return (
     <PurchasingDetail user={user} lineData={lineData} periodLabel={periodLabel} onBack={() => setView('main')} controlData={data} />
+  );
+  if (view === 'express') return (
+    <ExpressDetail user={user} lineData={lineData} periodLabel={periodLabel} onBack={() => setView('main')} controlData={expressData} />
   );
 
   return (
@@ -380,7 +384,7 @@ export default function ControlPage({ user }) {
 
         <div className="panel">
           <div className="panel-head">
-            <span className="panel-title" style={{color:'var(--orange)'}}>Express</span>
+            <span className="panel-title" style={{ cursor: 'pointer', color: 'var(--orange)' }} onClick={() => setView('express')}>Express ›</span>
             <span className={`badge ${Number(expressCardRatio) >= 80 ? 'badge-green' : 'badge-amber'}`}>
               {expressCardRatio ? `${expressCardRatio}% Active` : '—'}
             </span>
