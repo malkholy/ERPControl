@@ -925,26 +925,32 @@ begin
     if @Year is null or @Year = 0
         set @Year = year(getdate())
 
+    declare @MaxMonth int
+    if @Year = year(getdate())
+        set @MaxMonth = month(getdate())
+    else
+        set @MaxMonth = 12
+
     -- Run query to get the grouped table
     declare @SQL4 nvarchar(max)
     set @SQL4 = N'
         select top(25) 
             x.CustomerNo as CustomerNumber, 
             isnull(max(x.CustomerName), ''Unknown Customer'') as CustomerName,
-            sum(case when x.YTDYear = @Year then x.TotalAmount else 0 end) as AmountYTD2026,
-            sum(case when x.YTDYear = (@Year - 1) then x.TotalAmount else 0 end) as AmountYTD2025,
-            sum(case when x.YTDYear = @Year then x.TotalWeight else 0 end) as WeightYTD2026,
-            sum(case when x.YTDYear = (@Year - 1) then x.TotalWeight else 0 end) as WeightYTD2025,
-            sum(case when x.YTDYear = @Year then x.TotalVolume else 0 end) as VolumeYTD2026,
-            sum(case when x.YTDYear = (@Year - 1) then x.TotalVolume else 0 end) as VolumeYTD2025
-        from Control.CustomerYTDSummary x
+            sum(case when x.SummaryYear = @Year and x.SummaryMonth <= @MaxMonth then x.TotalAmount else 0 end) as AmountYTD2026,
+            sum(case when x.SummaryYear = (@Year - 1) and x.SummaryMonth <= @MaxMonth then x.TotalAmount else 0 end) as AmountYTD2025,
+            sum(case when x.SummaryYear = @Year and x.SummaryMonth <= @MaxMonth then x.TotalWeight else 0 end) as WeightYTD2026,
+            sum(case when x.SummaryYear = (@Year - 1) and x.SummaryMonth <= @MaxMonth then x.TotalWeight else 0 end) as WeightYTD2025,
+            sum(case when x.SummaryYear = @Year and x.SummaryMonth <= @MaxMonth then x.TotalVolume else 0 end) as VolumeYTD2026,
+            sum(case when x.SummaryYear = (@Year - 1) and x.SummaryMonth <= @MaxMonth then x.TotalVolume else 0 end) as VolumeYTD2025
+        from Control.CustomerMonthlySummary x
         left outer join acr.CustomerMaster b on x.CustomerNo = b.CustomerNo
-        where (x.YTDYear = @Year or x.YTDYear = (@Year - 1))
+        where (x.SummaryYear = @Year or x.SummaryYear = (@Year - 1))
           and ' + @Filter4 + '
         group by x.CustomerNo
-        order by sum(case when x.YTDYear = @Year then x.TotalAmount else 0 end) desc'
+        order by sum(case when x.SummaryYear = @Year and x.SummaryMonth <= @MaxMonth then x.TotalAmount else 0 end) desc'
 
-    exec sp_executesql @SQL4, N'@Year int', @Year = @Year
+    exec sp_executesql @SQL4, N'@Year int, @MaxMonth int', @Year = @Year, @MaxMonth = @MaxMonth
 end
 
 
