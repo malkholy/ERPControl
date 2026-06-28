@@ -188,7 +188,7 @@ begin
         Year     int           '$.Year'
     )
 
-    if @PeriodC = 'quarterly'
+    if @PeriodC = 'quarterly' and (@MonthsC is null or @MonthsC = '')
         set @MonthsC = case @QuarterNoC
             when 1 then '1,2,3'
             when 2 then '4,5,6'
@@ -434,7 +434,7 @@ begin
         Year     int           '$.Year'
     )
 
-    if @PeriodE = 'quarterly'
+    if @PeriodE = 'quarterly' and (@MonthsE is null or @MonthsE = '')
         set @MonthsE = case @QuarterNoE
             when 1 then '1,2,3'
             when 2 then '4,5,6'
@@ -553,7 +553,7 @@ begin
         Year     int           '$.Year'
     )
 
-    if @Period = 'quarterly'
+    if @Period = 'quarterly' and (@Months is null or @Months = '')
     begin
         set @Months = case @QuarterNo
             when 1 then '1,2,3'
@@ -729,7 +729,7 @@ begin
         Year     int           '$.Year'
     )
 
-    if @Period2 = 'quarterly'
+    if @Period2 = 'quarterly' and (@Months2 is null or @Months2 = '')
         set @Months2 = case @QuarterNo2
             when 1 then '1,2,3'
             when 2 then '4,5,6'
@@ -896,7 +896,7 @@ begin
         CustomerType nvarchar(50) '$.CustomerType'
     )
 
-    if @Period4 = 'quarterly'
+    if @Period4 = 'quarterly' and (@Months4 is null or @Months4 = '')
         set @Months4 = case @QuarterNo4
             when 1 then '1,2,3'
             when 2 then '4,5,6'
@@ -977,7 +977,7 @@ begin
         Year     int           '$.Year'
     )
 
-    if @Period3 = 'quarterly'
+    if @Period3 = 'quarterly' and (@Months3 is null or @Months3 = '')
         set @Months3 = case @QuarterNo3
             when 1 then '1,2,3'
             when 2 then '4,5,6'

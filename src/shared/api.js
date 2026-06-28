@@ -14,12 +14,22 @@ const BASE_BODY = {
   IP: '192.168.1.3'
 };
 
-export async function apiCall(operation, lineData = null, extraParams = {}, isExpress = false) {
-  const url = isExpress
-    ? (IS_DEV ? '/express-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7790/General/GeneralAPI/')
-    : (IS_DEV ? '/api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/');
-  
-  const spName = isExpress ? 'APIExprssControlOperation' : 'APIERPControlOperation';
+export async function apiCall(operation, lineData = null, extraParams = {}, apiType = 'default') {
+  const target = (apiType === true || apiType === 'express') ? 'express' : (apiType === 'hr' ? 'hr' : 'default');
+
+  let url = '';
+  let spName = '';
+
+  if (target === 'express') {
+    url = IS_DEV ? '/express-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7790/General/GeneralAPI/';
+    spName = 'APIExprssControlOperation';
+  } else if (target === 'hr') {
+    url = IS_DEV ? '/hr-api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7001/General/GeneralAPI/';
+    spName = 'APIHRControlOperation';
+  } else {
+    url = IS_DEV ? '/api/General/GeneralAPI/' : 'https://quick.glcpaints.com:7003/General/GeneralAPI/';
+    spName = 'APIERPControlOperation';
+  }
 
   const res = await fetch(url, {
     method: 'POST',

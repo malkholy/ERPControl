@@ -19,6 +19,19 @@ export default defineConfig({
           })
         }
       },
+      '/hr-api': {
+        target: 'https://quick.glcpaints.com:7001',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/hr-api/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('SP_Name', 'APIHRControlOperation')
+            proxyReq.setHeader('Accept', 'application/json')
+            proxyReq.setHeader('Content-Type', 'application/json')
+          })
+        }
+      },
       '/api': {
         target: 'https://quick.glcpaints.com:7003',
         changeOrigin: true,

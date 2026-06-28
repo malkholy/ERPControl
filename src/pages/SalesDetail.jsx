@@ -147,7 +147,21 @@ export default function SalesDetail({ user, lineData: initLineData, periodLabel:
   const init = initLineData || {};
   const [period, setPeriod] = useState(init.Period || 'monthly');
   const [months, setMonths] = useState(init.Months ? init.Months.split(',').map(Number) : [now.getMonth()+1]);
-  const [quarters, setQuarters] = useState([init.Quarter || Math.ceil((now.getMonth()+1)/3)]);
+  const [quarters, setQuarters] = useState(
+    init.Period === 'quarterly' && init.Months
+      ? (() => {
+          const mList = init.Months.split(',').map(Number);
+          const qSet = new Set();
+          mList.forEach(m => {
+            if (m >= 1 && m <= 3) qSet.add(1);
+            if (m >= 4 && m <= 6) qSet.add(2);
+            if (m >= 7 && m <= 9) qSet.add(3);
+            if (m >= 10 && m <= 12) qSet.add(4);
+          });
+          return [...qSet].sort((a, b) => a - b);
+        })()
+      : [init.Quarter || Math.ceil((now.getMonth() + 1) / 3)]
+  );
   const [year, setYear] = useState(init.Year || now.getFullYear());
   const [data, setData] = useState(null);
   const [comparisonMode, setComparisonMode] = useState('period'); // 'period' or 'ytd'

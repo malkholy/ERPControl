@@ -194,9 +194,14 @@ export default function App() {
   };
 
   const openPage = useCallback((id) => {
+    if (id === 'hr') {
+      const usernameLower = (user?.Username || '').toLowerCase();
+      const canAccessHR = usernameLower === 'mhd' || usernameLower === 'm.a.elhout';
+      if (!canAccessHR) return;
+    }
     setActiveTab(id);
     setOpenTabs(prev => prev.find(t => t.id === id) ? prev : [...prev, { id, ...NAV.find(n => n.id === id) }]);
-  }, []);
+  }, [user]);
 
   const closeTab = (id, e) => {
     e.stopPropagation();
@@ -252,12 +257,19 @@ export default function App() {
           </div>
         </div>
         <nav className="sb-nav">
-          {NAV.map(n => (
-            <button key={n.id} className={`sb-item${activeTab === n.id ? ' active' : ''}`} onClick={() => openPage(n.id)}>
-              <span className="sb-icon">{n.icon}</span>
-              {n.label}
-            </button>
-          ))}
+          {NAV.map(n => {
+            if (n.id === 'hr') {
+              const usernameLower = (user?.Username || '').toLowerCase();
+              const canAccessHR = usernameLower === 'mhd' || usernameLower === 'm.a.elhout';
+              if (!canAccessHR) return null;
+            }
+            return (
+              <button key={n.id} className={`sb-item${activeTab === n.id ? ' active' : ''}`} onClick={() => openPage(n.id)}>
+                <span className="sb-icon">{n.icon}</span>
+                {n.label}
+              </button>
+            );
+          })}
         </nav>
         <div className="sb-foot">
           <div className="sb-profile">
@@ -288,7 +300,7 @@ export default function App() {
         </header>
         <div className="page-area">
           {ActivePage
-            ? <ActivePage user={user} def={activeDef} />
+            ? <ActivePage user={user} def={activeDef} onBack={() => openPage('control')} />
             : <div style={{ textAlign: 'center', padding: '48px', color: 'var(--muted)' }}>Select a page from the sidebar</div>
           }
         </div>
