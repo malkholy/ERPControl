@@ -5,7 +5,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "iis-publish": "npm run build && node publish-iis.js"
   },
   "dependencies": {
     "react": "^18.0.0",
