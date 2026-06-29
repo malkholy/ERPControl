@@ -1027,7 +1027,7 @@ end
 
     if @Operation = 'Get Raw and Packing Details'
     begin
-        if lower(@User) not in ('mhd', 'a.mostafa')
+        if lower(@User) not in ('mhd', 'a.mostafa', 'm.a.elhout')
         begin
             set @State = 1
             set @Message = 'Access Denied: You do not have permission to view Raw & Packing data.'
