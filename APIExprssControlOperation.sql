@@ -27,46 +27,7 @@ begin
     set @State = 0;
     set @Message = '';
 
-    -- Declare table variable for Redemptions
-    declare @RedemptionTable table (
-        ClientID int,
-        GiftName nvarchar(250),
-        RedemptionYear int,
-        RedemptionMonth int,
-        GiftPoint dec(18,2),
-        OfferValue dec(18,2),
-        Source nvarchar(50)
-    )
-
-    -- Populate redemptions if needed
-    if @Operation in ('Get Express Details By Period', 'Get Express Client Detail')
-    begin
-        insert into @RedemptionTable (ClientID, GiftName, RedemptionYear, RedemptionMonth, GiftPoint, OfferValue, Source)
-        select 
-            a.ClientID,
-            b.GiftName,
-            year(a.GetDate),
-            month(a.GetDate),
-            isnull(a.GiftPoint, 0),
-            isnull(a.OfferValue, 0),
-            'NOVA'
-        from NOVA.NovaVoucherHistory a 
-        left outer join GiftMaster b on a.GiftID = b.GiftID 
-        where a.TransactionState = 1
-
-        insert into @RedemptionTable (ClientID, GiftName, RedemptionYear, RedemptionMonth, GiftPoint, OfferValue, Source)
-        select 
-            a.ClientID,
-            b.GiftName,
-            year(a.TransactionDate),
-            month(a.TransactionDate),
-            isnull(b.GiftPoint, 0),
-            isnull(a.PriviousBalance - a.CurrentBalance, 0),
-            'CCALL'
-        from CCALL.CashCallTransaction a 
-        left outer join ClientRequestHistory b on a.RequestNo = b.RequestNo 
-        where a.TransactionState = 1
-    end
+    -- Redemptions are queried from the pre-populated physical table [Stas].[RedemptionHistory]
 
     -- Parse standard parameters from @LineData if provided
     declare @Period nvarchar(20), @Months nvarchar(100), @QuarterNo int
@@ -200,7 +161,7 @@ begin
             @CY_RedeemRequests = isnull(count(1), 0),
             @CY_RedeemPoints = isnull(sum(GiftPoint), 0),
             @CY_RedeemAmount = isnull(sum(OfferValue), 0)
-        from @RedemptionTable
+        from [Express].[Stas].[RedemptionHistory]
         where RedemptionYear = @SelectedYear
 
         -- Query PY Redemptions
@@ -208,7 +169,7 @@ begin
             @PY_RedeemRequests = isnull(count(1), 0),
             @PY_RedeemPoints = isnull(sum(GiftPoint), 0),
             @PY_RedeemAmount = isnull(sum(OfferValue), 0)
-        from @RedemptionTable
+        from [Express].[Stas].[RedemptionHistory]
         where RedemptionYear = @SelectedYear - 1
 
         -- Query whole-year totals (for Activation vs Charging YoY KPI)
@@ -337,7 +298,7 @@ begin
             sum(OfferValue) as TotalGiftAmount,
             count(1) as TotalRequests,
             sum(GiftPoint) as TotalPoints
-        from @RedemptionTable
+        from [Express].[Stas].[RedemptionHistory]
         where RedemptionYear = @SelectedYear
           and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
         group by GiftName
@@ -371,7 +332,7 @@ begin
             select ClientID from [Express].[Stas].[PointChargingHistory]
             where ChargingYear = @SelectedYear and (@Period = 'yearly' or ChargingMonth in (select MonthVal from @MonthTable))
             union
-            select ClientID from @RedemptionTable
+            select ClientID from [Express].[Stas].[RedemptionHistory]
             where RedemptionYear = @SelectedYear and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
         )
         select top(25)
@@ -392,7 +353,7 @@ begin
         ) chg on cl.ClientID = chg.ClientID
         left join (
             select ClientID, sum(GiftPoint) as TotalRedeemedPoints, count(1) as TotalRedeemRequests
-            from @RedemptionTable
+            from [Express].[Stas].[RedemptionHistory]
             where RedemptionYear = @SelectedYear
               and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
             group by ClientID
@@ -404,7 +365,7 @@ begin
             select ClientID from [Express].[Stas].[PointChargingHistory]
             where ChargingYear = @SelectedYear and (@Period = 'yearly' or ChargingMonth in (select MonthVal from @MonthTable))
             union
-            select ClientID from @RedemptionTable
+            select ClientID from [Express].[Stas].[RedemptionHistory]
             where RedemptionYear = @SelectedYear and (@Period = 'yearly' or RedemptionMonth in (select MonthVal from @MonthTable))
         )
         select 
@@ -435,7 +396,7 @@ begin
                 count(1) as TotalRequests,
                 sum(GiftPoint) as TotalPoints,
                 sum(OfferValue) as TotalAmount
-            from @RedemptionTable
+            from [Express].[Stas].[RedemptionHistory]
             where RedemptionYear = @SelectedYear
               and Source = 'NOVA'
             group by RedemptionMonth
@@ -460,7 +421,7 @@ begin
                 count(1) as TotalRequests,
                 sum(GiftPoint) as TotalPoints,
                 sum(OfferValue) as TotalAmount
-            from @RedemptionTable
+            from [Express].[Stas].[RedemptionHistory]
             where RedemptionYear = @SelectedYear
               and Source = 'CCALL'
             group by RedemptionMonth
@@ -505,7 +466,7 @@ begin
             sum(OfferValue) as GiftAmount,
             count(1) as TotalRequest,
             sum(GiftPoint) as TotalPoint
-        from @RedemptionTable
+        from [Express].[Stas].[RedemptionHistory]
         where ClientID = @ClientID
         group by RedemptionYear, RedemptionMonth, GiftName
         order by RedemptionYear desc, RedemptionMonth desc
