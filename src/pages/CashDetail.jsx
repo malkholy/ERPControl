@@ -303,7 +303,11 @@ function BankSummaryPanel({ topBanks }) {
     groups[name][currency] = (groups[name][currency] || 0) + Number(b.ClosingBalance || 0);
   });
 
-  const bankNames = Object.keys(groups).sort();
+  const bankNames = Object.keys(groups).sort((a, b) => {
+    const balA = Math.abs(Number(groups[a]["EGP"] || 0));
+    const balB = Math.abs(Number(groups[b]["EGP"] || 0));
+    return balB - balA;
+  });
 
   return (
     <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden",marginTop:24}}>
