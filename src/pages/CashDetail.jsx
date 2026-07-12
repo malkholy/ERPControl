@@ -386,11 +386,15 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
         {[
           { label:"Treasury", group:"126" },
           { label:"Bank",     group:"127" },
-        ].map((g, gi) => {
+        ].map(g => {
           const rows = summary.filter(s => s.AccountGroup === g.group);
           const opening = rows.reduce((s,r) => s + Math.abs(Number(r.OpeningBalance||0)), 0);
           const current = rows.reduce((s,r) => s + Math.abs(Number(r.Balance||0)), 0);
           const diff    = current - opening;
+          return { ...g, opening, current, diff };
+        })
+        .sort((a, b) => b.current - a.current)
+        .map((g, gi) => {
           return (
             <div key={gi} className="kpi-card" style={{padding:"16px 20px"}}>
               {loading ? <div className="kpi-loading"><div className="spinner"></div></div> : <>
@@ -398,16 +402,16 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
                 <div style={{display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12}}>
                   <div>
                     <div className="kpi-label">Year Opening</div>
-                    <div style={{fontSize:18, fontWeight:700}}>{fmt(opening)}</div>
+                    <div style={{fontSize:18, fontWeight:700}}>{fmt(g.opening)}</div>
                   </div>
                   <div>
                     <div className="kpi-label">Current Balance</div>
-                    <div style={{fontSize:18, fontWeight:700}}>{fmt(current)}</div>
+                    <div style={{fontSize:18, fontWeight:700}}>{fmt(g.current)}</div>
                   </div>
                   <div>
                     <div className="kpi-label">Difference</div>
-                    <div style={{fontSize:18, fontWeight:700, color: diff>=0?"var(--green)":"var(--red)"}}>
-                      {diff>=0?"+":""}{fmt(diff)}
+                    <div style={{fontSize:18, fontWeight:700, color: g.diff>=0?"var(--green)":"var(--red)"}}>
+                      {g.diff>=0?"+":""}{fmt(g.diff)}
                     </div>
                   </div>
                 </div>
