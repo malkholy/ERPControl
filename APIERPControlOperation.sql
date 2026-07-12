@@ -198,11 +198,13 @@ begin
 
     declare @MonthFilterC nvarchar(200)
     declare @MonthFilterCOpen nvarchar(200)
+    declare @PeriodEndFilter nvarchar(200)
 
     if @PeriodC = 'yearly'
     begin
         set @MonthFilterC     = 'year(JournalDate) = ' + cast(@Year as nvarchar)
         set @MonthFilterCOpen = 'JournalDate < ''' + cast(@Year as nvarchar) + '-01-01'''
+        set @PeriodEndFilter  = 'JournalDate <= ''' + cast(@Year as nvarchar) + '-12-31'''
     end
     else
     begin
@@ -214,13 +216,14 @@ begin
                         and JournalDate <= ''' + cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-' + cast(@LastDay as nvarchar) + ''''
 
         set @MonthFilterCOpen = 'JournalDate < ''' + cast(@Year as nvarchar) + '-' + right('0'+cast(@FirstMonth as nvarchar),2) + '-01'''
+        set @PeriodEndFilter  = 'JournalDate <= ''' + cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-' + cast(@LastDay as nvarchar) + ''''
     end
 
     declare @CSQL nvarchar(max)
 
-    -- List0: Summary per group (126/127) per Currency with Opening Balance
+    -- List0: Summary per group (126/127) per Currency with Year Opening & Period Closing Balances
     set @CSQL = N'
-    ;with Opening as (
+    ;with YearOpening as (
         select 
             left(Account, 3) as AccountGroup,
             LineCurrency,
@@ -229,40 +232,35 @@ begin
         from acc.JournalLine
         where (Account like ''126%'' or Account like ''127%'')
         and Account not in (1278, 1279, 1270)
-        and ' + @MonthFilterCOpen + '
+        and JournalDate < ''' + cast(@Year as nvarchar) + '-01-01''
         group by left(Account, 3), LineCurrency
     ),
-    Movement as (
+    Closing as (
         select 
             left(Account, 3) as AccountGroup,
-            case left(Account, 3) when ''126'' then ''Treasury'' when ''127'' then ''Bank'' else ''Other'' end as GroupName,
             LineCurrency,
-            sum(DebitTransaction)  as TotalDebit,
-            sum(CreditTransaction) as TotalCredit,
             sum(DebitTransaction - CreditTransaction) as Balance,
-            sum(DebitBook)  as TotalDebitBook,
-            sum(CreditBook) as TotalCreditBook,
             sum(DebitBook - CreditBook) as BalanceBook
         from acc.JournalLine
         where (Account like ''126%'' or Account like ''127%'')
         and Account not in (1278, 1279, 1270)
-        and ' + @MonthFilterC + '
+        and ' + @PeriodEndFilter + '
         group by left(Account, 3), LineCurrency
     )
     select 
-        isnull(m.AccountGroup, o.AccountGroup) as AccountGroup,
-        case isnull(m.AccountGroup, o.AccountGroup) when ''126'' then ''Treasury'' when ''127'' then ''Bank'' else ''Other'' end as GroupName,
-        isnull(m.LineCurrency, o.LineCurrency) as LineCurrency,
-        isnull(m.TotalDebit, 0) as TotalDebit,
-        isnull(m.TotalCredit, 0) as TotalCredit,
-        isnull(o.OpeningBalance, 0) + isnull(m.Balance, 0) as Balance,
+        isnull(c.AccountGroup, o.AccountGroup) as AccountGroup,
+        case isnull(c.AccountGroup, o.AccountGroup) when ''126'' then ''Treasury'' when ''127'' then ''Bank'' else ''Other'' end as GroupName,
+        isnull(c.LineCurrency, o.LineCurrency) as LineCurrency,
+        0 as TotalDebit,
+        0 as TotalCredit,
+        isnull(c.Balance, 0) as Balance,
         isnull(o.OpeningBalance, 0) as OpeningBalance,
-        isnull(m.TotalDebitBook, 0) as TotalDebitBook,
-        isnull(m.TotalCreditBook, 0) as TotalCreditBook,
-        isnull(o.OpeningBalanceBook, 0) + isnull(m.BalanceBook, 0) as BalanceBook,
+        0 as TotalDebitBook,
+        0 as TotalCreditBook,
+        isnull(c.BalanceBook, 0) as BalanceBook,
         isnull(o.OpeningBalanceBook, 0) as OpeningBalanceBook
-    from Movement m
-    full outer join Opening o on m.AccountGroup = o.AccountGroup and m.LineCurrency = o.LineCurrency
+    from Closing c
+    full outer join YearOpening o on c.AccountGroup = o.AccountGroup and c.LineCurrency = o.LineCurrency
     order by AccountGroup, LineCurrency'
     exec sp_executesql @CSQL
  
