@@ -348,7 +348,7 @@ begin
     from Bank_List bl
     left outer join Opening o on bl.Bank = o.Bank and bl.LineCurrency = o.LineCurrency
     left outer join Movement m on bl.Bank = m.Bank and bl.LineCurrency = m.LineCurrency
-    order by bl.LineCurrency, ClosingBalance desc'
+    order by bl.LineCurrency, abs(isnull(o.OpeningBalance, 0) + isnull(m.Balance, 0)) desc'
     exec sp_executesql @CSQL
 
 end

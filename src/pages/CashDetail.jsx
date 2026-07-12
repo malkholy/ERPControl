@@ -188,10 +188,10 @@ function TopBanksPanel({ topBanks, summary }) {
     topBanks.filter(b => b.LineCurrency === curr && getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency) === curr).length
   ), 1);
 
-  // Get actual banks for the active currency, sorted by parent bank name
+  // Get actual banks for the active currency, sorted by closing amount descending
   const activeBanks = topBanks
     .filter(b => b.LineCurrency === activeCurr && getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency) === activeCurr)
-    .sort((a, b) => (a.BankAccountName || "").localeCompare(b.BankAccountName || ""));
+    .sort((a, b) => Math.abs(Number(b.ClosingBalance || 0)) - Math.abs(Number(a.ClosingBalance || 0)));
 
   // Pad activeBanks with empty rows up to maxRowsCount
   const filteredBanks = [...activeBanks];
