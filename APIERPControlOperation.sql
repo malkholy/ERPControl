@@ -585,6 +585,15 @@ begin
         end
     end
 
+    declare @LastMonth int = 12
+    declare @LastDay int = 31
+    if @Period <> 'yearly'
+    begin
+        select @LastMonth = max(cast(value as int)) from string_split(@Months, ',')
+        set @LastDay = day(eomonth(cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-01'))
+    end
+    declare @PeriodEndFilter nvarchar(200) = 'JournalDate <= ''' + cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-' + cast(@LastDay as nvarchar) + ''''
+
     declare @MonthFilter nvarchar(200) = ''
     if @Period = 'yearly'
         set @MonthFilter = '1=1'
@@ -615,10 +624,12 @@ begin
                  and ' + @MonthFilterJ
     exec sp_executesql @SQL, N'@out dec(18,5) output', @out=@TotalCollection output
 
-    -- Customer Balance (no filter)
-    select @CustomerBalance = sum(DebitBook - CreditBook)
-    from acc.JournalLine 
-    where Account in ('1241','1242')
+    -- Customer Balance
+    set @SQL = N'select @out = sum(DebitBook - CreditBook)
+                 from acc.JournalLine 
+                 where Account in (''1241'','''1242'')
+                 and ' + @PeriodEndFilter
+    exec sp_executesql @SQL, N'@out dec(18,5) output', @out=@CustomerBalance output
 
     -- Total Purchasing
     set @SQL = N'select @out = Sum((TotalLinesAmount - TotalDiscount) * InvoiceExchangeRate)
@@ -636,10 +647,12 @@ begin
                  and ' + @MonthFilterJ
     exec sp_executesql @SQL, N'@out dec(18,5) output', @out=@TotalPaid output
 
-    -- Vendor Balance (no filter)
-    select @VendorBalance = sum(DebitBook - CreditBook)
-    from acc.JournalLine 
-    where Account in (2321,2322)
+    -- Vendor Balance
+    set @SQL = N'select @out = sum(DebitBook - CreditBook)
+                 from acc.JournalLine 
+                 where Account in (2321,2322)
+                 and ' + @PeriodEndFilter
+    exec sp_executesql @SQL, N'@out dec(18,5) output', @out=@VendorBalance output
 
     -- Apply User Restrictions to KPI metrics
     if lower(@User) = 'w.sabri'
@@ -693,14 +706,6 @@ begin
     else
     begin
         -- List2: Cash for Control Page - Opening, Current, Difference per group
-        declare @LastMonth int = 12
-        declare @LastDay int = 31
-        if @Period <> 'yearly'
-        begin
-            select @LastMonth = max(cast(value as int)) from string_split(@Months, ',')
-            set @LastDay = day(eomonth(cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-01'))
-        end
-        declare @PeriodEndFilter nvarchar(200) = 'JournalDate <= ''' + cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-' + cast(@LastDay as nvarchar) + ''''
 
         set @SQL = N'
         ;with CurrentBal as (
