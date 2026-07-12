@@ -218,25 +218,43 @@ begin
 
     declare @CSQL nvarchar(max)
 
-    -- List0: Summary per group (126/127) per Currency
+    -- List0: Summary per group (126/127) per Currency with Opening Balance
     set @CSQL = N'
+    ;with Opening as (
+        select 
+            left(Account, 3) as AccountGroup,
+            LineCurrency,
+            sum(DebitTransaction - CreditTransaction) as OpeningBalance
+        from acc.JournalLine
+        where (Account like ''126%'' or Account like ''127%'')
+        and Account not in (1278, 1279, 1270)
+        and ' + @MonthFilterCOpen + '
+        group by left(Account, 3), LineCurrency
+    ),
+    Movement as (
+        select 
+            left(Account, 3) as AccountGroup,
+            case left(Account, 3) when ''126'' then ''Treasury'' when ''127'' then ''Bank'' else ''Other'' end as GroupName,
+            LineCurrency,
+            sum(DebitTransaction)  as TotalDebit,
+            sum(CreditTransaction) as TotalCredit,
+            sum(DebitTransaction - CreditTransaction) as Balance
+        from acc.JournalLine
+        where (Account like ''126%'' or Account like ''127%'')
+        and Account not in (1278, 1279, 1270)
+        and ' + @MonthFilterC + '
+        group by left(Account, 3), LineCurrency
+    )
     select 
-        left(a.Account, 3) as AccountGroup,
-        case left(a.Account, 3) when ''126'' then ''Treasury'' when ''127'' then ''Bank'' else ''Other'' end as GroupName,
-        a.LineCurrency,
-        sum(a.DebitTransaction)  as TotalDebit,
-        sum(a.CreditTransaction) as TotalCredit,
-        case left(a.Account, 3)
-            when ''126'' then sum(a.DebitTransaction - a.CreditTransaction)
-            when ''127'' then sum(a.DebitTransaction - a.CreditTransaction)
-            else sum(a.DebitTransaction - a.CreditTransaction)
-        end as Balance
-    from acc.JournalLine a
-    left outer join acc.AccountsMaster b on a.Account = b.AccountNumber
-    where (a.Account like ''126%'' or a.Account like ''127%'')
-    and a.Account not in (1278, 1279, 1270)
-    and ' + @MonthFilterC + '
-    group by left(a.Account, 3), a.LineCurrency
+        isnull(m.AccountGroup, o.AccountGroup) as AccountGroup,
+        case isnull(m.AccountGroup, o.AccountGroup) when ''126'' then ''Treasury'' when ''127'' then ''Bank'' else ''Other'' end as GroupName,
+        isnull(m.LineCurrency, o.LineCurrency) as LineCurrency,
+        isnull(m.TotalDebit, 0) as TotalDebit,
+        isnull(m.TotalCredit, 0) as TotalCredit,
+        isnull(o.OpeningBalance, 0) + isnull(m.Balance, 0) as Balance,
+        isnull(o.OpeningBalance, 0) as OpeningBalance
+    from Movement m
+    full outer join Opening o on m.AccountGroup = o.AccountGroup and m.LineCurrency = o.LineCurrency
     order by AccountGroup, LineCurrency'
     exec sp_executesql @CSQL
  

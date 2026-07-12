@@ -387,7 +387,7 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
           { label:"Treasury", group:"126" },
           { label:"Bank",     group:"127" },
         ].map(g => {
-          const rows = summary.filter(s => s.AccountGroup === g.group);
+          const rows = summary.filter(s => s.AccountGroup === g.group && s.LineCurrency === activeCurr);
           const opening = rows.reduce((s,r) => s + Math.abs(Number(r.OpeningBalance||0)), 0);
           const current = rows.reduce((s,r) => s + Math.abs(Number(r.Balance||0)), 0);
           const diff    = current - opening;
