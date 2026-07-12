@@ -470,7 +470,7 @@ begin
         ' + cast(@TotalSalesAmountE as nvarchar(50)) + ' as TotalSalesAmount
         from acc.JournalLine a
         left outer join acc.AccountsMaster b on a.Account = b.AccountNumber
-        where a.Account in (4221,4231)
+        where a.Account in (4211,4212,4221,4231)
         and year(JournalDate) = ' + cast(@Year as nvarchar) + '
         and ' + @MonthFilterE + '
         group by Account, b.AccountDescription'
@@ -490,7 +490,7 @@ begin
         left outer join acc.AccountsMaster b on a.Account = b.AccountNumber
         left outer join acc.SegmentsMaster s1 on s1.SegmentValue = a.Segment9 and s1.SegmentID = 9
         left outer join acc.SegmentsMaster s2 on s2.SegmentValue = s1.ParentValue and s2.SegmentID = 9
-        where a.Account in (4221,4231)
+        where a.Account in (4211,4212,4221,4231)
         and year(JournalDate) = ' + cast(@Year as nvarchar) + '
         and ' + @MonthFilterE + '
         group by a.Account, a.Segment9, s1.ValueDescription, s1.ParentValue, s2.ValueDescription
@@ -516,7 +516,7 @@ begin
         left outer join acc.AccountsMaster b on a.Account = b.AccountNumber
         left outer join acc.SegmentsMaster s1 on s1.SegmentValue = a.Segment9 and s1.SegmentID = 9
         left outer join acc.SegmentsMaster s2 on s2.SegmentValue = s1.ParentValue and s2.SegmentID = 9
-        where a.Account in (4221,4231)
+        where a.Account in (4211,4212,4221,4231)
         and year(JournalDate) = ' + cast(@Year as nvarchar) + '
         and ' + @MonthFilterE + '
         group by a.Account, b.AccountDescription, a.Segment9,
@@ -655,7 +655,7 @@ begin
                         sum(DebitBook - CreditBook) as TotalAmount
                         from acc.JournalLine a 
                         left outer join acc.AccountsMaster b on a.Account = b.AccountNumber
-                        where a.Account in (4221, 4231) 
+                        where a.Account in (4211, 4212, 4221, 4231) 
                         and year(JournalDate) = ' + cast(@Year as nvarchar) + '
                         and ' + @MonthFilterJ + '
                         group by Account, b.AccountDescription'

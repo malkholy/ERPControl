@@ -41,6 +41,12 @@ const NAV = [
     label: 'Express',
     desc: 'Card charging, activation, and gift redemption analytics',
   },
+  {
+    id: 'saftystock',
+    icon: '🛡️',
+    label: 'Safety Stock',
+    desc: 'Safety stock limits, warehouses, and item types configuration',
+  },
 ];
 
 export default NAV;
