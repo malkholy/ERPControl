@@ -177,6 +177,7 @@ function getBankCurrency(bankCode, bankName, fallbackCurrency) {
 }
 
 function TopBanksPanel({ topBanks, summary, currencies, activeCurr, selectedCurrency, setSelectedCurrency }) {
+  const [searchQuery, setSearchQuery] = useState("");
   
   // Calculate the max number of banks in any single currency to set the standard row count
   const maxRowsCount = Math.max(...currencies.map(curr => 
@@ -188,8 +189,14 @@ function TopBanksPanel({ topBanks, summary, currencies, activeCurr, selectedCurr
     .filter(b => b.LineCurrency === activeCurr && getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency) === activeCurr)
     .sort((a, b) => Math.abs(Number(b.ClosingBalance || 0)) - Math.abs(Number(a.ClosingBalance || 0)));
 
-  // Pad activeBanks with empty rows up to maxRowsCount
-  const filteredBanks = [...activeBanks];
+  // Filter based on search query
+  const filteredActiveBanks = activeBanks.filter(b => 
+    (b.Bank || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (b.BankAccountName || "").toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Pad filteredActiveBanks with empty rows up to maxRowsCount
+  const filteredBanks = [...filteredActiveBanks];
   while (filteredBanks.length < maxRowsCount) {
     filteredBanks.push({
       Bank: "",
@@ -207,9 +214,20 @@ function TopBanksPanel({ topBanks, summary, currencies, activeCurr, selectedCurr
   const grandTotal = activeBanks.reduce((s,b) => s + Math.abs(Number(b.ClosingBalance||0)), 0);
   return (
     <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
-      <div style={{padding:"13px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:14,fontWeight:700}}>Balances by Bank Institution</span>
-        <span style={{fontSize:13,fontWeight:700,color:"var(--orange)"}}>{fmt(grandTotal)}</span>
+      <div style={{padding:"10px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center",gap:16}}>
+        <span style={{fontSize:14,fontWeight:700,flexShrink:0}}>Balances by Bank Institution</span>
+        <input 
+          type="text" 
+          placeholder="Search bank name or code..." 
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          style={{
+            height:28,fontSize:12,padding:"0 10px",borderRadius:"3px",
+            border:"1px solid var(--border)",background:"var(--soft)",color:"var(--text)",
+            outline:"none",flex:1,maxWidth:220
+          }}
+        />
+        <span style={{fontSize:13,fontWeight:700,color:"var(--orange)",flexShrink:0}}>{fmt(grandTotal)}</span>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat("+currencies.length+", 1fr)",gap:8,padding:14,borderBottom:"1px solid var(--border)"}}>
         {currencies.map((curr, i) => {
@@ -288,62 +306,7 @@ function TopBanksPanel({ topBanks, summary, currencies, activeCurr, selectedCurr
   );
 }
 
-function BankSummaryPanel({ topBanks }) {
-  const currencies = [...new Set(topBanks.map(b => getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency)))];
-  
-  // Group by Bank Name
-  const groups = {};
-  topBanks.forEach(b => {
-    if (!b.BankAccountName) return;
-    const name = b.BankAccountName;
-    if (!groups[name]) {
-      groups[name] = {};
-    }
-    const currency = getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency);
-    groups[name][currency] = (groups[name][currency] || 0) + Number(b.ClosingBalance || 0);
-  });
-
-  const bankNames = Object.keys(groups).sort((a, b) => {
-    const balA = Math.abs(Number(groups[a]["EGP"] || 0));
-    const balB = Math.abs(Number(groups[b]["EGP"] || 0));
-    return balB - balA;
-  });
-
-  return (
-    <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
-      <div style={{padding:"13px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:14,fontWeight:700}}>🏛️ Bank Summary (By Currency)</span>
-      </div>
-      <div style={{overflowX:"auto"}}>
-        <table style={{width:"100%",borderCollapse:"collapse"}}>
-          <thead>
-            <tr style={{background:"var(--soft)",borderBottom:"1px solid var(--border)"}}>
-              <th style={{padding:"10px 14px",fontSize:11,fontWeight:700,color:"var(--muted)",textAlign:"left"}}>Bank Institution</th>
-              {currencies.map((curr, idx) => (
-                <th key={idx} style={{padding:"10px 14px",fontSize:11,fontWeight:700,color:"var(--muted)",textAlign:"right"}}>{curr}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {bankNames.map((name, i) => (
-              <tr key={i} style={{borderBottom:i<bankNames.length-1?"1px solid var(--border)":"none"}}>
-                <td style={{padding:"10px 14px",fontSize:13,fontWeight:500}}>{name}</td>
-                {currencies.map((curr, idx) => {
-                  const bal = groups[name][curr];
-                  return (
-                    <td key={idx} style={{padding:"10px 14px",fontSize:13,fontWeight:700,textAlign:"right",color:bal && bal !== 0 ? "var(--text)" : "var(--muted)"}}>
-                      {bal !== undefined && bal !== 0 ? fmt(Math.abs(bal)) : "—"}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+// BankSummaryPanel removed
 
 export default function CashDetail({ user, lineData: initLineData, periodLabel: initPeriodLabel, onBack }) {
   const now = new Date();
@@ -487,7 +450,8 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
             <GroupPanel title="Bank"     icon="🏛️" summary={bank}     details={bankDetails} />
           </div>
           {topBanks.length > 0 && (
-            <div style={{display:"grid",gridTemplateColumns:"1.25fr 1fr",gap:14,marginTop:20}}>
+            <div style={{marginTop:20}}>
+              <div className="section-label" style={{marginBottom:10}}>Balances by Bank Institution</div>
               <TopBanksPanel 
                 topBanks={topBanks} 
                 summary={summary} 
@@ -496,7 +460,6 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
                 selectedCurrency={selectedCurrency}
                 setSelectedCurrency={setSelectedCurrency}
               />
-              <BankSummaryPanel topBanks={topBanks} />
             </div>
           )}
         </>
