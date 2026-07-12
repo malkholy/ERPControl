@@ -693,6 +693,15 @@ begin
     else
     begin
         -- List2: Cash for Control Page - Opening, Current, Difference per group
+        declare @LastMonth int = 12
+        declare @LastDay int = 31
+        if @Period <> 'yearly'
+        begin
+            select @LastMonth = max(cast(value as int)) from string_split(@Months, ',')
+            set @LastDay = day(eomonth(cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-01'))
+        end
+        declare @PeriodEndFilter nvarchar(200) = 'JournalDate <= ''' + cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-' + cast(@LastDay as nvarchar) + ''''
+
         set @SQL = N'
         ;with CurrentBal as (
             select 
@@ -701,6 +710,7 @@ begin
             from acc.JournalLine
             where (Account like ''126%'' or Account like ''127%'')
             and Account not in (1278, 1279, 1270)
+            and ' + @PeriodEndFilter + '
             group by left(Account, 3)
         ),
         OpeningBal as (
