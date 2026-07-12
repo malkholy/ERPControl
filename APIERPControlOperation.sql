@@ -224,7 +224,8 @@ begin
         select 
             left(Account, 3) as AccountGroup,
             LineCurrency,
-            sum(DebitTransaction - CreditTransaction) as OpeningBalance
+            sum(DebitTransaction - CreditTransaction) as OpeningBalance,
+            sum(DebitBook - CreditBook) as OpeningBalanceBook
         from acc.JournalLine
         where (Account like ''126%'' or Account like ''127%'')
         and Account not in (1278, 1279, 1270)
@@ -238,7 +239,10 @@ begin
             LineCurrency,
             sum(DebitTransaction)  as TotalDebit,
             sum(CreditTransaction) as TotalCredit,
-            sum(DebitTransaction - CreditTransaction) as Balance
+            sum(DebitTransaction - CreditTransaction) as Balance,
+            sum(DebitBook)  as TotalDebitBook,
+            sum(CreditBook) as TotalCreditBook,
+            sum(DebitBook - CreditBook) as BalanceBook
         from acc.JournalLine
         where (Account like ''126%'' or Account like ''127%'')
         and Account not in (1278, 1279, 1270)
@@ -252,7 +256,11 @@ begin
         isnull(m.TotalDebit, 0) as TotalDebit,
         isnull(m.TotalCredit, 0) as TotalCredit,
         isnull(o.OpeningBalance, 0) + isnull(m.Balance, 0) as Balance,
-        isnull(o.OpeningBalance, 0) as OpeningBalance
+        isnull(o.OpeningBalance, 0) as OpeningBalance,
+        isnull(m.TotalDebitBook, 0) as TotalDebitBook,
+        isnull(m.TotalCreditBook, 0) as TotalCreditBook,
+        isnull(o.OpeningBalanceBook, 0) + isnull(m.BalanceBook, 0) as BalanceBook,
+        isnull(o.OpeningBalanceBook, 0) as OpeningBalanceBook
     from Movement m
     full outer join Opening o on m.AccountGroup = o.AccountGroup and m.LineCurrency = o.LineCurrency
     order by AccountGroup, LineCurrency'
