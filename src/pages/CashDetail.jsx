@@ -102,63 +102,7 @@ function StateBadge({ state }) {
   }, c.icon + " " + state);
 }
 
-function GroupPanel({ title, icon, summary, details }) {
-  const [expanded, setExpanded] = useState({});
-  const groupTotal = summary.reduce((s,c) => s + Number(c.Balance||0), 0);
-  const maxBalance = Math.max(...summary.map(c => Math.abs(Number(c.Balance||0))), 1);
-  return (
-    <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden"}}>
-      <div style={{padding:"13px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        <span style={{fontSize:14,fontWeight:700}}>{icon} {title}</span>
-        <span style={{fontSize:13,fontWeight:700,color:"var(--orange)"}}>{fmt(Math.abs(groupTotal))}</span>
-      </div>
-      {summary.map((s, i) => {
-        const currDetails = details.filter(d => d.LineCurrency === s.LineCurrency);
-        const isOpen = expanded[s.LineCurrency];
-        return (
-          <div key={i}>
-            <div onClick={() => setExpanded(e => ({...e, [s.LineCurrency]: !e[s.LineCurrency]}))}
-              style={{display:"flex",alignItems:"center",gap:10,padding:"11px 18px",cursor:"pointer",borderBottom:"1px solid var(--border)",background:isOpen?"var(--soft)":"transparent",transition:"background .15s"}}>
-              <span style={{fontSize:11,color:"var(--muted)",width:14,flexShrink:0,display:"inline-block",transition:"transform .2s",transform:isOpen?"rotate(90deg)":"none"}}>›</span>
-              <span style={{fontSize:13,fontWeight:600,minWidth:50}}>{s.LineCurrency}</span>
-              <div style={{flex:1,height:5,background:"var(--border)",borderRadius:999,overflow:"hidden"}}>
-                <div style={{width:(Math.abs(Number(s.Balance||0))/maxBalance*100)+"%",height:"100%",background:"var(--orange)",borderRadius:999}}></div>
-              </div>
-              <span style={{fontSize:13,fontWeight:700,minWidth:60,textAlign:"right"}}>{fmt(Math.abs(Number(s.Balance||0)))}</span>
-            </div>
-            {isOpen && (
-              <div style={{background:"var(--soft)"}}>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 80px 80px 70px",gap:6,padding:"7px 18px 7px 42px",borderBottom:"1px solid var(--border)"}}>
-                  {["Description","Opening","Debit","Credit","Movement","Closing","State"].map((h,i) => (
-                    <span key={i} style={{fontSize:10,fontWeight:700,color:"var(--muted)",textTransform:"uppercase",textAlign:i>0?"right":"left"}}>{h}</span>
-                  ))}
-                </div>
-                {currDetails.map((d, j) => {
-                  const closing = Math.abs(Number(d.ClosingBalance||0));
-                  const opening = Math.abs(Number(d.OpeningBalance||0));
-                  const movement = closing - opening;
-                  return (
-                    <div key={j} style={{display:"grid",gridTemplateColumns:"1fr 80px 80px 80px 80px 80px 70px",gap:6,padding:"9px 18px 9px 42px",borderBottom:j<currDetails.length-1?"1px solid var(--border)":"none",alignItems:"center"}}>
-                      <span style={{fontSize:12,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.AccountDescription}</span>
-                      <span style={{fontSize:12,textAlign:"right",color:"var(--muted)"}}>{fmt(opening)}</span>
-                      <span style={{fontSize:12,textAlign:"right",color:"var(--green)"}}>{fmt(Math.abs(Number(d.TotalDebit||0)))}</span>
-                      <span style={{fontSize:12,textAlign:"right",color:"var(--red)"}}>{fmt(Math.abs(Number(d.TotalCredit||0)))}</span>
-                      <span style={{fontSize:12,textAlign:"right",fontWeight:600,color:movement>=0?"var(--green)":"var(--red)"}}>
-                        {movement >= 0 ? "+" : ""}{fmt(movement)}
-                      </span>
-                      <span style={{fontSize:12,textAlign:"right",fontWeight:700}}>{fmt(closing)}</span>
-                      <span style={{textAlign:"right"}}><StateBadge state={d.CashState} /></span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+// GroupPanel removed
 
 function getBankCurrency(bankCode, bankName, fallbackCurrency) {
   const code = (bankCode || "").toUpperCase();
@@ -445,10 +389,7 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
         <div className="loading-wrap"><div className="spinner"></div></div>
       ) : (
         <>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:16}}>
-            <GroupPanel title="Treasury" icon="🏦" summary={treasury} details={treasuryDetails} />
-            <GroupPanel title="Bank"     icon="🏛️" summary={bank}     details={bankDetails} />
-          </div>
+          {/* Group panels removed */}
           {topBanks.length > 0 && (
             <div style={{marginTop:20}}>
               <div className="section-label" style={{marginBottom:10}}>Balances by Bank Institution</div>
