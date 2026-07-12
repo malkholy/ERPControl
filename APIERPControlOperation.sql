@@ -299,58 +299,56 @@ begin
     order by m.AccountGroup, m.LineCurrency, m.Account'
     exec sp_executesql @CSQL
 
-    -- List2: Bank balances summarized by Parent Bank per currency
+    -- List2: Bank balances summarized from Bank_List per currency
     set @CSQL = N'
-    ;with BankMovement as (
-        select 
-            isnull(nullif(b.BankAccountParent, ''''), b.BankAccountNumber) as Bank,
-            isnull(nullif(p.BankAccountName, ''''), b.BankAccountName) as BankAccountName,
-            a.LineCurrency,
-            sum(  a.DebitTransaction-a.CreditTransaction ) as Balance,
-            sum(a.DebitTransaction)  as TotalDebit,
-            sum(a.CreditTransaction) as TotalCredit
-        from acc.JournalLine a
-        left outer join acc.BankAccountsMaster b on a.Bank = b.BankAccountNumber
-        left outer join acc.BankAccountsMaster p on b.BankAccountParent = p.BankAccountNumber
-        where a.Account like ''127%''
-        and a.Account not in (1278, 1279, 1270)
-        and ' + @MonthFilterC + '
-        group by isnull(nullif(b.BankAccountParent, ''''), b.BankAccountNumber), isnull(nullif(p.BankAccountName, ''''), b.BankAccountName), a.LineCurrency
+    ;with Bank_List as (	
+        select distinct Bank, b.BankAccountName, a.LineCurrency  
+        from acc.JournalLine a 
+        left outer join acc.BankAccountsMaster b on a.bank = b.BankAccountNumber
+        where (a.Account like ''127%'') and bank <> ''''
     ),
-    BankOpening as (
+    Opening as (
         select 
-            isnull(nullif(b.BankAccountParent, ''''), b.BankAccountNumber) as Bank,
-            a.LineCurrency,
-            sum( a.DebitTransaction-a.CreditTransaction ) as OpeningBalance
-        from acc.JournalLine a
-        left outer join acc.BankAccountsMaster b on a.Bank = b.BankAccountNumber
-        where a.Account like ''127%''
-        and a.Account not in (1278, 1279, 1270)
-        and ' + @MonthFilterCOpen + '
-        group by isnull(nullif(b.BankAccountParent, ''''), b.BankAccountNumber), a.LineCurrency
+            Bank,
+            LineCurrency,
+            sum(DebitTransaction - CreditTransaction) as OpeningBalance
+        from acc.JournalLine
+        where (Account like ''127%'')
+          and Bank <> ''''
+          and ' + @MonthFilterCOpen + '
+        group by Bank, LineCurrency
     ),
-    Summarized as (
+    Movement as (
         select 
-            m.Bank,
-            m.BankAccountName,
-            m.LineCurrency,
-            isnull(o.OpeningBalance, 0) as OpeningBalance,
-            m.TotalDebit,
-            m.TotalCredit,
-            m.Balance as Movement,
-            isnull(o.OpeningBalance, 0) + m.Balance as ClosingBalance,
-            case 
-                when m.TotalCredit > m.TotalDebit then ''Inflow''
-                when m.TotalDebit > m.TotalCredit then ''Outflow''
-                else ''Neutral''
-            end as CashState
-        from BankMovement m
-        left outer join BankOpening o on m.Bank = o.Bank and m.LineCurrency = o.LineCurrency
+            Bank,
+            LineCurrency,
+            sum(DebitTransaction) as TotalDebit,
+            sum(CreditTransaction) as TotalCredit,
+            sum(DebitTransaction - CreditTransaction) as Balance
+        from acc.JournalLine
+        where (Account like ''127%'')
+          and Bank <> ''''
+          and ' + @MonthFilterC + '
+        group by Bank, LineCurrency
     )
-    select Bank, BankAccountName, LineCurrency, OpeningBalance,
-           TotalDebit, TotalCredit, Movement, ClosingBalance, CashState
-    from Summarized
-    order by LineCurrency, ClosingBalance desc'
+    select 
+        bl.Bank,
+        bl.BankAccountName,
+        bl.LineCurrency,
+        isnull(o.OpeningBalance, 0) as OpeningBalance,
+        isnull(m.TotalDebit, 0) as TotalDebit,
+        isnull(m.TotalCredit, 0) as TotalCredit,
+        isnull(m.Balance, 0) as Movement,
+        isnull(o.OpeningBalance, 0) + isnull(m.Balance, 0) as ClosingBalance,
+        case 
+            when isnull(m.TotalCredit, 0) > isnull(m.TotalDebit, 0) then ''Inflow''
+            when isnull(m.TotalDebit, 0) > isnull(m.TotalCredit, 0) then ''Outflow''
+            else ''Neutral''
+        end as CashState
+    from Bank_List bl
+    left outer join Opening o on bl.Bank = o.Bank and bl.LineCurrency = o.LineCurrency
+    left outer join Movement m on bl.Bank = m.Bank and bl.LineCurrency = m.LineCurrency
+    order by bl.LineCurrency, ClosingBalance desc'
     exec sp_executesql @CSQL
 
 end
