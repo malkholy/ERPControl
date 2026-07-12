@@ -585,14 +585,14 @@ begin
         end
     end
 
-    declare @LastMonth int = 12
-    declare @LastDay int = 31
+    declare @CtrlLastMonth int = 12
+    declare @CtrlLastDay int = 31
     if @Period <> 'yearly'
     begin
-        select @LastMonth = max(cast(value as int)) from string_split(@Months, ',')
-        set @LastDay = day(eomonth(cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-01'))
+        select @CtrlLastMonth = max(cast(value as int)) from string_split(@Months, ',')
+        set @CtrlLastDay = day(eomonth(cast(@Year as nvarchar) + '-' + right('0'+cast(@CtrlLastMonth as nvarchar),2) + '-01'))
     end
-    declare @PeriodEndFilter nvarchar(200) = 'JournalDate <= ''' + cast(@Year as nvarchar) + '-' + right('0'+cast(@LastMonth as nvarchar),2) + '-' + cast(@LastDay as nvarchar) + ''''
+    declare @CtrlPeriodEndFilter nvarchar(200) = 'JournalDate <= ''' + cast(@Year as nvarchar) + '-' + right('0'+cast(@CtrlLastMonth as nvarchar),2) + '-' + cast(@CtrlLastDay as nvarchar) + ''''
 
     declare @MonthFilter nvarchar(200) = ''
     if @Period = 'yearly'
@@ -627,8 +627,8 @@ begin
     -- Customer Balance
     set @SQL = N'select @out = sum(DebitBook - CreditBook)
                  from acc.JournalLine 
-                 where Account in (''1241'','''1242'')
-                 and ' + @PeriodEndFilter
+                 where Account in (''1241'',''1242'')
+                 and ' + @CtrlPeriodEndFilter
     exec sp_executesql @SQL, N'@out dec(18,5) output', @out=@CustomerBalance output
 
     -- Total Purchasing
@@ -651,7 +651,7 @@ begin
     set @SQL = N'select @out = sum(DebitBook - CreditBook)
                  from acc.JournalLine 
                  where Account in (2321,2322)
-                 and ' + @PeriodEndFilter
+                 and ' + @CtrlPeriodEndFilter
     exec sp_executesql @SQL, N'@out dec(18,5) output', @out=@VendorBalance output
 
     -- Apply User Restrictions to KPI metrics
@@ -715,7 +715,7 @@ begin
             from acc.JournalLine
             where (Account like ''126%'' or Account like ''127%'')
             and Account not in (1278, 1279, 1270)
-            and ' + @PeriodEndFilter + '
+            and ' + @CtrlPeriodEndFilter + '
             group by left(Account, 3)
         ),
         OpeningBal as (
