@@ -176,12 +176,7 @@ function getBankCurrency(bankCode, bankName, fallbackCurrency) {
   return fallbackCurrency;
 }
 
-function TopBanksPanel({ topBanks, summary }) {
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
-  
-  // Categorize each bank record to its correct account currency
-  const currencies = [...new Set(topBanks.map(b => getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency)))];
-  const activeCurr = selectedCurrency || currencies[0];
+function TopBanksPanel({ topBanks, summary, currencies, activeCurr, selectedCurrency, setSelectedCurrency }) {
   
   // Calculate the max number of banks in any single currency to set the standard row count
   const maxRowsCount = Math.max(...currencies.map(curr => 
@@ -319,12 +314,14 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
   const [topBanks, setTopBanks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedCurrency, setSelectedCurrency] = useState(null);
 
   const periodLabel = getPeriodLabel(period, months, quarters, year);
   const lineData = buildLineData(period, months, quarters, year);
 
   async function load() {
     setLoading(true); setError(""); setSummary([]); setDetails([]); setTopBanks([]);
+    setSelectedCurrency(null);
     try {
       const d = await apiCall("Get Cash Details By Period", lineData);
       setSummary(d.List0 || []);
@@ -335,6 +332,9 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
   }
 
   useEffect(() => { load(); }, [period, months, quarters, year]);
+
+  const currencies = [...new Set(topBanks.map(b => getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency)))];
+  const activeCurr = selectedCurrency || currencies[0] || "";
 
   const treasury = summary.filter(c => c.AccountGroup === "126");
   const bank     = summary.filter(c => c.AccountGroup === "127");
@@ -432,7 +432,14 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
           {topBanks.length > 0 && (
             <>
               <div className="section-label" style={{marginBottom:10}}>Balances by Bank Institution</div>
-              <TopBanksPanel topBanks={topBanks} summary={summary} />
+              <TopBanksPanel 
+                topBanks={topBanks} 
+                summary={summary} 
+                currencies={currencies}
+                activeCurr={activeCurr}
+                selectedCurrency={selectedCurrency}
+                setSelectedCurrency={setSelectedCurrency}
+              />
             </>
           )}
         </>
