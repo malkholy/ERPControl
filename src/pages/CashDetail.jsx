@@ -123,37 +123,16 @@ function getBankCurrency(bankCode, bankName, fallbackCurrency) {
 function TopBanksPanel({ topBanks, summary, currencies, activeCurr, selectedCurrency, setSelectedCurrency }) {
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Calculate the max number of banks in any single currency to set the standard row count
-  const maxRowsCount = Math.max(...currencies.map(curr => 
-    topBanks.filter(b => b.LineCurrency === curr && getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency) === curr).length
-  ), 1);
-
   // Get actual banks for the active currency, sorted by closing amount descending
   const activeBanks = topBanks
     .filter(b => b.LineCurrency === activeCurr && getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency) === activeCurr)
     .sort((a, b) => Math.abs(Number(b.ClosingBalance || 0)) - Math.abs(Number(a.ClosingBalance || 0)));
 
   // Filter based on search query
-  const filteredActiveBanks = activeBanks.filter(b => 
+  const filteredBanks = activeBanks.filter(b => 
     (b.Bank || "").toLowerCase().includes(searchQuery.toLowerCase()) || 
     (b.BankAccountName || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  // Pad filteredActiveBanks with empty rows up to maxRowsCount
-  const filteredBanks = [...filteredActiveBanks];
-  while (filteredBanks.length < maxRowsCount) {
-    filteredBanks.push({
-      Bank: "",
-      BankAccountName: "",
-      LineCurrency: activeCurr,
-      OpeningBalance: null,
-      TotalDebit: null,
-      TotalCredit: null,
-      ClosingBalance: null,
-      CashState: "Neutral",
-      isEmptyPlaceholder: true
-    });
-  }
 
   const grandTotal = activeBanks.reduce((s,b) => s + Math.abs(Number(b.ClosingBalance||0)), 0);
   return (
@@ -202,19 +181,6 @@ function TopBanksPanel({ topBanks, summary, currencies, activeCurr, selectedCurr
           </thead>
           <tbody>
             {filteredBanks.map((b, i) => {
-              if (b.isEmptyPlaceholder) {
-                return (
-                  <tr key={i}>
-                    <td style={{padding:"10px 14px",fontSize:12,borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
-                    <td style={{padding:"10px 14px",fontSize:13,borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
-                    <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
-                    <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
-                    <td style={{padding:"10px 14px",fontSize:12,textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
-                    <td style={{padding:"10px 14px",fontSize:13,textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
-                    <td style={{padding:"10px 14px",textAlign:"right",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>&nbsp;</td>
-                  </tr>
-                );
-              }
               return (
                 <tr key={i}>
                   <td style={{padding:"10px 14px",fontSize:12,fontFamily:"var(--mono)",color:"var(--muted)",borderBottom:i<filteredBanks.length-1?"1px solid var(--border)":"none"}}>{b.Bank}</td>
