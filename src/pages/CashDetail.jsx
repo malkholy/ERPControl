@@ -288,6 +288,59 @@ function TopBanksPanel({ topBanks, summary, currencies, activeCurr, selectedCurr
   );
 }
 
+function BankSummaryPanel({ topBanks }) {
+  const currencies = [...new Set(topBanks.map(b => getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency)))];
+  
+  // Group by Bank Name
+  const groups = {};
+  topBanks.forEach(b => {
+    if (!b.BankAccountName) return;
+    const name = b.BankAccountName;
+    if (!groups[name]) {
+      groups[name] = {};
+    }
+    const currency = getBankCurrency(b.Bank, b.BankAccountName, b.LineCurrency);
+    groups[name][currency] = (groups[name][currency] || 0) + Number(b.ClosingBalance || 0);
+  });
+
+  const bankNames = Object.keys(groups).sort();
+
+  return (
+    <div style={{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:"var(--radius)",overflow:"hidden",marginTop:24}}>
+      <div style={{padding:"13px 18px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <span style={{fontSize:14,fontWeight:700}}>🏛️ Bank Summary (By Currency)</span>
+      </div>
+      <div style={{overflowX:"auto"}}>
+        <table style={{width:"100%",borderCollapse:"collapse"}}>
+          <thead>
+            <tr style={{background:"var(--soft)",borderBottom:"1px solid var(--border)"}}>
+              <th style={{padding:"10px 14px",fontSize:11,fontWeight:700,color:"var(--muted)",textAlign:"left"}}>Bank Institution</th>
+              {currencies.map((curr, idx) => (
+                <th key={idx} style={{padding:"10px 14px",fontSize:11,fontWeight:700,color:"var(--muted)",textAlign:"right"}}>{curr}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {bankNames.map((name, i) => (
+              <tr key={i} style={{borderBottom:i<bankNames.length-1?"1px solid var(--border)":"none"}}>
+                <td style={{padding:"10px 14px",fontSize:13,fontWeight:500}}>{name}</td>
+                {currencies.map((curr, idx) => {
+                  const bal = groups[name][curr];
+                  return (
+                    <td key={idx} style={{padding:"10px 14px",fontSize:13,fontWeight:700,textAlign:"right",color:bal && bal !== 0 ? "var(--text)" : "var(--muted)"}}>
+                      {bal !== undefined && bal !== 0 ? fmt(Math.abs(bal)) : "—"}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function CashDetail({ user, lineData: initLineData, periodLabel: initPeriodLabel, onBack }) {
   const now = new Date();
   const init = initLineData || {};
@@ -440,6 +493,7 @@ export default function CashDetail({ user, lineData: initLineData, periodLabel: 
                 selectedCurrency={selectedCurrency}
                 setSelectedCurrency={setSelectedCurrency}
               />
+              <BankSummaryPanel topBanks={topBanks} />
             </>
           )}
         </>
