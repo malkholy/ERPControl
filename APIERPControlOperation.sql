@@ -711,22 +711,20 @@ begin
         ;with CurrentBal as (
             select 
                 left(Account, 3) as AccountGroup,
-                sum(DebitTransaction - CreditTransaction) as CurrentBalance
+                sum(DebitBook - CreditBook) as CurrentBalance
             from acc.JournalLine
             where (Account like ''126%'' or Account like ''127%'')
             and Account not in (1278, 1279, 1270)
-            and LineCurrency = ''EGP''
             and ' + @CtrlPeriodEndFilter + '
             group by left(Account, 3)
         ),
         OpeningBal as (
             select 
                 left(Account, 3) as AccountGroup,
-                sum(DebitTransaction - CreditTransaction) as OpeningBalance
+                sum(DebitBook - CreditBook) as OpeningBalance
             from acc.JournalLine
             where (Account like ''126%'' or Account like ''127%'')
             and Account not in (1278, 1279, 1270)
-            and LineCurrency = ''EGP''
             and JournalDate < ''' + cast(@Year as nvarchar) + '-01-01''
             group by left(Account, 3)
         )
