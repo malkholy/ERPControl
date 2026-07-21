@@ -227,7 +227,7 @@ begin
         select 
             left(Account, 3) as AccountGroup,
             LineCurrency,
-            sum(DebitTransaction - CreditTransaction) as OpeningBalance,
+            sum(case when LineCurrency = ''EGP'' then DebitBook - CreditBook else DebitTransaction - CreditTransaction end) as OpeningBalance,
             sum(DebitBook - CreditBook) as OpeningBalanceBook
         from acc.JournalLine
         where (Account like ''126%'' or Account like ''127%'')
@@ -239,7 +239,7 @@ begin
         select 
             left(Account, 3) as AccountGroup,
             LineCurrency,
-            sum(DebitTransaction - CreditTransaction) as Balance,
+            sum(case when LineCurrency = ''EGP'' then DebitBook - CreditBook else DebitTransaction - CreditTransaction end) as Balance,
             sum(DebitBook - CreditBook) as BalanceBook
         from acc.JournalLine
         where (Account like ''126%'' or Account like ''127%'')
@@ -271,9 +271,9 @@ begin
             a.Account,
             a.LineCurrency,
             case left(a.Account, 3)
-                when ''126'' then sum(a.DebitTransaction - a.CreditTransaction)
-                when ''127'' then sum(a.DebitTransaction - a.CreditTransaction)
-                else sum(a.DebitTransaction - a.CreditTransaction)
+                when ''126'' then sum(case when a.LineCurrency = ''EGP'' then a.DebitBook - a.CreditBook else a.DebitTransaction - a.CreditTransaction end)
+                when ''127'' then sum(case when a.LineCurrency = ''EGP'' then a.DebitBook - a.CreditBook else a.DebitTransaction - a.CreditTransaction end)
+                else sum(case when a.LineCurrency = ''EGP'' then a.DebitBook - a.CreditBook else a.DebitTransaction - a.CreditTransaction end)
             end as OpeningBalance
         from acc.JournalLine a
         where (a.Account like ''126%'' or a.Account like ''127%'')
@@ -288,12 +288,12 @@ begin
             left(a.Account, 3) as AccountGroup,
             case left(a.Account, 3) when ''126'' then ''Treasury'' when ''127'' then ''Bank'' else ''Other'' end as GroupName,
             a.LineCurrency,
-            sum(a.DebitTransaction)  as TotalDebit,
-            sum(a.CreditTransaction) as TotalCredit,
+            sum(case when a.LineCurrency = ''EGP'' then a.DebitBook else a.DebitTransaction end)  as TotalDebit,
+            sum(case when a.LineCurrency = ''EGP'' then a.CreditBook else a.CreditTransaction end) as TotalCredit,
             case left(a.Account, 3)
-                when ''126'' then sum(a.DebitTransaction - a.CreditTransaction)
-                when ''127'' then sum(a.DebitTransaction - a.CreditTransaction)
-                else sum(a.DebitTransaction - a.CreditTransaction)
+                when ''126'' then sum(case when a.LineCurrency = ''EGP'' then a.DebitBook - a.CreditBook else a.DebitTransaction - a.CreditTransaction end)
+                when ''127'' then sum(case when a.LineCurrency = ''EGP'' then a.DebitBook - a.CreditBook else a.DebitTransaction - a.CreditTransaction end)
+                else sum(case when a.LineCurrency = ''EGP'' then a.DebitBook - a.CreditBook else a.DebitTransaction - a.CreditTransaction end)
             end as Movement
         from acc.JournalLine a
         left outer join acc.AccountsMaster b on a.Account = b.AccountNumber
@@ -319,7 +319,7 @@ begin
             else ''Neutral''
         end as CashState
     from Movement m
-    left outer join Opening o on m.Account = o.Account and m.LineCurrency = o.LineCurrency
+    left outer join Opening o on m.Account = o.Account and m.LineCurrency = m.LineCurrency
     order by m.AccountGroup, m.LineCurrency, m.Account'
     exec sp_executesql @CSQL
 
@@ -335,7 +335,7 @@ begin
         select 
             Bank,
             LineCurrency,
-            sum(DebitTransaction - CreditTransaction) as OpeningBalance
+            sum(case when LineCurrency = ''EGP'' then DebitBook - CreditBook else DebitTransaction - CreditTransaction end) as OpeningBalance
         from acc.JournalLine
         where (Account like ''127%'')
           and Bank <> ''''
@@ -346,9 +346,9 @@ begin
         select 
             Bank,
             LineCurrency,
-            sum(DebitTransaction) as TotalDebit,
-            sum(CreditTransaction) as TotalCredit,
-            sum(DebitTransaction - CreditTransaction) as Balance
+            sum(case when LineCurrency = ''EGP'' then DebitBook else DebitTransaction end) as TotalDebit,
+            sum(case when LineCurrency = ''EGP'' then CreditBook else CreditTransaction end) as TotalCredit,
+            sum(case when LineCurrency = ''EGP'' then DebitBook - CreditBook else DebitTransaction - CreditTransaction end) as Balance
         from acc.JournalLine
         where (Account like ''127%'')
           and Bank <> ''''
